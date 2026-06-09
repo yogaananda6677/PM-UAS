@@ -4,7 +4,7 @@
     <color name="white">#FFFFFFFF</color>
 
     <!-- Warna tambahan untuk login -->
-    <color name="blue_primary">#1565C0</color>
-    <color name="blue_light">#E3F2FD</color>
-    <color name="gray_hint">#777777</color>
+    <color name="gray_border">#D3D1C7</color>
+    <color name="blue_primary">#1A3A5C</color>
+    <color name="gray_hint">#888780</color>
 </resources>

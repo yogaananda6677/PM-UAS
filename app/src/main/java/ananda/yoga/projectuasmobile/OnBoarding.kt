@@ -16,10 +16,12 @@ class OnBoarding : AppCompatActivity() {
 
         b.btnMulai.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
+            finish() // ← tambah ini
         }
 
         b.tvLogin.setOnClickListener {
             startActivity(Intent(this, LoginActivity::class.java))
+            finish() // ← tambah ini
         }
     }
 }
