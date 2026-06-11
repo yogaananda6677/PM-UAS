@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F0F4F8">
+    android:background="?attr/colorSurface">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -11,53 +11,42 @@
         android:orientation="vertical"
         android:paddingBottom="24dp">
 
-        <!-- Top Bar Greeting (Sudah dirapikan, tidak dobel lagi) -->
+        <!-- Header Greeting -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_header_infinity"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:paddingHorizontal="20dp"
-            android:paddingTop="10dp"
-            android:paddingBottom="24dp"
-            android:elevation="6dp"
-            android:gravity="center_vertical">
-            <!-- Top Bar Greeting -->
-            <LinearLayout
-                android:layout_width="match_parent"
+            android:paddingTop="20dp"
+            android:paddingBottom="28dp"
+            android:elevation="6dp">
+
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_header_infinity"
-                android:orientation="vertical"
-                android:paddingHorizontal="20dp"
-                android:paddingTop="20dp"
-                android:paddingBottom="28dp"
-                android:elevation="6dp">
+                android:text="Selamat datang 👋"
+                android:textColor="#000000"
+                android:textSize="13sp"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Selamat datang 👋"
-                    android:textColor="#B0C8E0"
-                    android:textSize="13sp"/>
+            <TextView
+                android:id="@+id/tvGreetingName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="#000000"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                tools:text="Ananda Yoga"/>
 
-                <TextView
-                    android:id="@+id/tvGreetingName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:textColor="#FFFFFF"
-                    android:textSize="22sp"
-                    android:textStyle="bold"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Semoga harimu menyenangkan!"
-                    android:textColor="#B0C8E0"
-                    android:textSize="12sp"/>
-
-            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Semoga harimu menyenangkan!"
+                android:textColor="#000000"
+                android:alpha="0.8"
+                android:textSize="12sp"/>
         </LinearLayout>
 
         <!-- Notifikasi Banner -->
@@ -84,8 +73,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="#0C447C"
-                android:textSize="12sp"
-                tools:text="Pemberitahuan baru untuk Anda."/>
+                android:textSize="12sp"/>
         </LinearLayout>
 
         <!-- Label Statistik -->
@@ -130,8 +118,7 @@
                     android:layout_marginTop="4dp"
                     android:text="0"
                     android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:textColor="#333333"/>
+                    android:textStyle="bold"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -162,8 +149,7 @@
                     android:layout_marginTop="4dp"
                     android:text="0"
                     android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:textColor="#333333"/>
+                    android:textStyle="bold"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -194,8 +180,7 @@
                     android:layout_marginTop="4dp"
                     android:text="0"
                     android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:textColor="#333333"/>
+                    android:textStyle="bold"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -227,8 +212,60 @@
             android:layout_marginTop="8dp"
             android:background="@drawable/bg_card"
             android:divider="@color/gray_border"
-            android:dividerHeight="1dp"
-            android:nestedScrollingEnabled="false"/>
+            android:dividerHeight="1dp"/>
+
+        <!-- Label Testimoni -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:text="TESTIMONI PELANGGAN"
+            android:textColor="#888780"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05"/>
+
+        <!-- Video Testimoni -->
+        <androidx.media3.ui.PlayerView
+            android:id="@+id/playerView"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            android:background="#000000"/>
+
+        <!-- Label Lokasi -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:text="LOKASI PS TERDEKAT"
+            android:textColor="#888780"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05"/>
+
+        <!-- Jarak -->
+        <TextView
+            android:id="@+id/tvJarak"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp"
+            android:text="Menghitung jarak..."
+            android:textColor="#185FA5"
+            android:textSize="13sp"/>
+
+        <!-- OpenStreetMap -->
+        <org.osmdroid.views.MapView
+            android:id="@+id/mapView"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"/>
 
     </LinearLayout>
 </ScrollView>
