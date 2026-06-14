@@ -38,6 +38,17 @@
         <activity android:name=".RegisterActivity" android:exported="false"/>
         <activity android:name=".LoginActivity" android:exported="false"/>
         <activity android:name=".MainActivity" android:exported="false"/>
+        <activity
+            android:name=".PemesananActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".PembayaranActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".TambahPesananActivity"
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

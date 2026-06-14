@@ -7,7 +7,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import ananda.yoga.projectuasmobile.config.ApiConfig
 import ananda.yoga.projectuasmobile.databinding.ActivityLoginBinding
-import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import org.json.JSONObject
@@ -21,11 +20,44 @@ class LoginActivity : AppCompatActivity() {
         b = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(b.root)
 
+        // Ambil data username & password yang pernah disimpan
+        loadRememberMe()
+
         b.btnLogin.setOnClickListener { doLogin() }
 
         b.tvGoRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
             finish()
+        }
+    }
+
+    private fun loadRememberMe() {
+        val rememberPref = getSharedPreferences("remember_login", Context.MODE_PRIVATE)
+
+        val isRemember = rememberPref.getBoolean("remember_me", false)
+
+        if (isRemember) {
+            val username = rememberPref.getString("username", "")
+            val password = rememberPref.getString("password", "")
+
+            b.etEmail.setText(username)
+            b.etPassword.setText(password)
+            b.cbRemember.isChecked = true
+        }
+    }
+
+    private fun saveRememberMe(username: String, password: String) {
+        val rememberPref = getSharedPreferences("remember_login", Context.MODE_PRIVATE)
+
+        with(rememberPref.edit()) {
+            if (b.cbRemember.isChecked) {
+                putBoolean("remember_me", true)
+                putString("username", username)
+                putString("password", password)
+            } else {
+                clear()
+            }
+            apply()
         }
     }
 
@@ -54,22 +86,26 @@ class LoginActivity : AppCompatActivity() {
                 b.btnLogin.isEnabled = true
                 b.btnLogin.text = "Masuk"
 
-                // Ambil token & data user dari response
                 val token = response.optString("token", "")
-                val user  = response.optJSONObject("user")
+                val user = response.optJSONObject("user")
 
                 if (token.isNotEmpty() && user != null) {
+
+                    // Simpan session login
                     val sharedPref = getSharedPreferences("user_session", Context.MODE_PRIVATE)
                     with(sharedPref.edit()) {
                         putBoolean("is_login", true)
                         putString("token", token)
-                        putString("id_user",  user.optString("id_user"))
-                        putString("nama",     user.optString("name"))
+                        putString("id_user", user.optString("id_user"))
+                        putString("nama", user.optString("name"))
                         putString("username", user.optString("username"))
-                        putString("email",    user.optString("email"))
-                        putString("role",     user.optString("role"))
+                        putString("email", user.optString("email"))
+                        putString("role", user.optString("role"))
                         apply()
                     }
+
+                    // Simpan username & password kalau checkbox dicentang
+                    saveRememberMe(username, password)
 
                     Toast.makeText(this, "Login berhasil!", Toast.LENGTH_SHORT).show()
                     startActivity(Intent(this, MainActivity::class.java))
@@ -83,20 +119,19 @@ class LoginActivity : AppCompatActivity() {
                 b.btnLogin.isEnabled = true
                 b.btnLogin.text = "Masuk"
 
-                // Parse error message dari Laravel
                 val errorBody = error.networkResponse?.data?.toString(Charsets.UTF_8)
                 val message = try {
                     JSONObject(errorBody ?: "").optString("message", "Login gagal")
                 } catch (e: Exception) {
                     "Gagal terhubung ke server"
                 }
+
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
             }
         ) {
-            // Tambah header Content-Type dan Accept untuk Laravel
             override fun getHeaders(): MutableMap<String, String> {
                 return hashMapOf(
-                    "Accept"       to "application/json",
+                    "Accept" to "application/json",
                     "Content-Type" to "application/json"
                 )
             }
