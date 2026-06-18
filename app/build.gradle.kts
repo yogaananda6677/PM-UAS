@@ -40,11 +40,7 @@ android {
             buildConfigField(
                 "String",
                 "BASE_URL",
-<<<<<<< HEAD
-                "\"${localProperties.getProperty("BASE_URL_DEBUG") ?: "http://192.168.48.231:8000/api/"}\""
-=======
-                "\"${localProperties.getProperty("BASE_URL_DEBUG") ?: "http://192.168.1.4:8000/api/"}\""
->>>>>>> 02cb43cb3902a519526c571d0776f9bf1dcf8178
+                "\"${localProperties.getProperty("BASE_URL_DEBUG") ?: "http://192.168.1.60:8000/api/"}\""
             )
         }
 
@@ -57,11 +53,7 @@ android {
             buildConfigField(
                 "String",
                 "BASE_URL",
-<<<<<<< HEAD
-                "\"${localProperties.getProperty("BASE_URL_RELEASE") ?: "http://192.168.48.231:8000/api/"}\""
-=======
-                "\"${localProperties.getProperty("BASE_URL_RELEASE") ?: "http://192.168.1.4:8000/api/"}\""
->>>>>>> 02cb43cb3902a519526c571d0776f9bf1dcf8178
+                "\"${localProperties.getProperty("BASE_URL_RELEASE") ?: "http://192.168.1.60:8000/api/"}\""
             )
         }
     }
