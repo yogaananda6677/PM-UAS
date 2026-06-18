@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-
     <item
         android:id="@+id/itemTambahProduk"
         android:title="Tambah Produk" />
-
     <item
         android:id="@+id/itemTambahWaktu"
         android:title="Tambah Waktu" />
-
     <item
         android:id="@+id/itemBayar"
         android:title="Bayar" />
-
+    <item
+        android:id="@+id/itemDetail"
+        android:title="Detail Pesanan" />
 </menu>

@@ -1,6 +1,6 @@
 package ananda.yoga.projectuasmobile.fragment
 
-import ananda.yoga.projectuasmobile.adapter.MonitoringAdapter
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -18,6 +18,7 @@ import ananda.yoga.projectuasmobile.PembayaranActivity
 import ananda.yoga.projectuasmobile.PemesananActivity
 import ananda.yoga.projectuasmobile.R
 import ananda.yoga.projectuasmobile.TambahPesananActivity
+import ananda.yoga.projectuasmobile.adapter.MonitoringAdapter
 import ananda.yoga.projectuasmobile.config.ApiConfig
 import ananda.yoga.projectuasmobile.databinding.FragmentMonitoringBinding
 import ananda.yoga.projectuasmobile.model.MonitoringPs
@@ -30,7 +31,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-class MonitoringFragment : Fragment() {
+class MonitoringFragment : Fragment(), View.OnClickListener {
 
     private var _b: FragmentMonitoringBinding? = null
     private val b get() = _b!!
@@ -38,6 +39,7 @@ class MonitoringFragment : Fragment() {
     private val semuaData = ArrayList<MonitoringPs>()
     private val tampilData = ArrayList<MonitoringPs>()
     private lateinit var adapterMonitoring: MonitoringAdapter
+    private lateinit var idUserLogin: String
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -50,6 +52,10 @@ class MonitoringFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Ambil id user login untuk keperluan adapter dan pengecekan kepemilikan
+        val pref = requireContext().getSharedPreferences("user_session", Context.MODE_PRIVATE)
+        idUserLogin = pref.getString("id_user", "") ?: ""
 
         setupListView()
         setupSpinner()
@@ -64,70 +70,50 @@ class MonitoringFragment : Fragment() {
     }
 
     private fun setupListView() {
-
         adapterMonitoring = MonitoringAdapter(
             requireContext(),
-            tampilData
+            tampilData,
+            idUserLogin
         )
-
         b.gvMonitoring.adapter = adapterMonitoring
 
         b.gvMonitoring.setOnItemClickListener { _, view, position, _ ->
-
             val item = tampilData[position]
 
             if (isWaiting(item)) {
-
                 Toast.makeText(
                     requireContext(),
                     "Pemesanan masih menunggu persetujuan admin",
                     Toast.LENGTH_SHORT
                 ).show()
-
             } else if (isTersedia(item.statusPs)) {
-
                 bukaPemesanan(item)
-
             } else if (isMilikSaya(item)) {
-
                 tampilkanPopupMenu(view, item)
-
             } else {
-
                 Toast.makeText(
                     requireContext(),
                     "Playstation sedang digunakan",
                     Toast.LENGTH_SHORT
                 ).show()
-
             }
-
         }
-
     }
 
     private fun setupSpinner() {
         val dataStatus = arrayOf("Semua", "Tersedia", "Digunakan", "Menunggu", "Maintenance")
-
         val adapter = ArrayAdapter(
             requireContext(),
             android.R.layout.simple_spinner_item,
             dataStatus
         )
-
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         b.spStatus.adapter = adapter
 
         b.spStatus.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 filterData()
             }
-
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
     }
@@ -137,15 +123,18 @@ class MonitoringFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) {
                 filterData()
             }
-
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
     }
 
     private fun setupButton() {
-        b.btnRefresh.setOnClickListener {
-            getDataMonitoring()
+        b.btnRefresh.setOnClickListener(this)
+    }
+
+    override fun onClick(v: View?) {
+        when (v?.id) {
+            R.id.btnRefresh -> getDataMonitoring()
         }
     }
 
@@ -165,11 +154,9 @@ class MonitoringFragment : Fragment() {
             },
             { error ->
                 b.progressBar.visibility = View.GONE
-
                 val statusCode = error.networkResponse?.statusCode
                 val errorBody = error.networkResponse?.data?.toString(Charsets.UTF_8)
                 val pesan = errorBody ?: "Gagal mengambil data monitoring"
-
                 Toast.makeText(
                     requireContext(),
                     "Error $statusCode: $pesan",
@@ -180,11 +167,9 @@ class MonitoringFragment : Fragment() {
             override fun getHeaders(): MutableMap<String, String> {
                 val headers = HashMap<String, String>()
                 headers["Accept"] = "application/json"
-
                 if (token.isNotEmpty()) {
                     headers["Authorization"] = "Bearer $token"
                 }
-
                 return headers
             }
         }
@@ -221,48 +206,37 @@ class MonitoringFragment : Fragment() {
                     ?: item.optJSONObject("transaksi_aktif")
                     ?: item.optJSONObject("pemesanan_aktif")
 
-                val idTransaksi = if (transaksiObj != null) {
-                    transaksiObj.optString("id_transaksi", transaksiObj.optString("id", ""))
-                } else {
-                    ""
-                }
+                val idTransaksi = transaksiObj?.optString("id_transaksi", transaksiObj.optString("id", "")) ?: ""
+                val statusTransaksi = transaksiObj?.optString("status_transaksi", transaksiObj.optString("status", "")) ?: ""
 
-                val statusTransaksi = if (transaksiObj != null) {
-                    transaksiObj.optString("status_transaksi", transaksiObj.optString("status", ""))
-                } else {
-                    ""
-                }
-
-                val userObj = transaksiObj?.optJSONObject("user")
-                    ?: transaksiObj?.optJSONObject("pelanggan")
-
-                val idUserTransaksi = if (userObj != null) {
-                    userObj.optString("id_user", userObj.optString("id", ""))
-                } else {
-                    ""
-                }
-
-                val namaPelanggan = if (userObj != null) {
-                    userObj.optString("name", userObj.optString("nama", "-"))
-                } else {
-                    "-"
-                }
+                val userObj = transaksiObj?.optJSONObject("user") ?: transaksiObj?.optJSONObject("pelanggan")
+                val idUserTransaksi = userObj?.optString("id_user", userObj.optString("id", "")) ?: ""
+                val namaPelanggan = userObj?.optString("name", userObj.optString("nama", "-")) ?: "-"
 
                 val pembayaranObj = transaksiObj?.optJSONObject("pembayaran")
-                val statusBayar = if (pembayaranObj != null) {
-                    pembayaranObj.optString("status_bayar", pembayaranObj.optString("status", "-"))
-                } else {
-                    "-"
-                }
+                val statusBayar = pembayaranObj?.optString("status_bayar", pembayaranObj.optString("status", "-")) ?: "-"
 
                 val detailSewa = cariDetailSewa(transaksiObj, idPs)
                 val jamMulai = detailSewa?.optString("jam_mulai", "-") ?: "-"
-
                 var jamSelesai = detailSewa?.optString("jam_selesai", "-") ?: "-"
 
+                // Hitung durasi jika jam selesai tidak ada
+                var durasiMenit = 0
                 if (jamSelesai == "null" || jamSelesai == "-" || jamSelesai.isEmpty()) {
-                    val durasi = detailSewa?.optInt("durasi_menit", 0) ?: 0
-                    jamSelesai = hitungJamSelesai(jamMulai, durasi)
+                    durasiMenit = detailSewa?.optInt("durasi_menit", 0) ?: 0
+                    jamSelesai = hitungJamSelesai(jamMulai, durasiMenit)
+                } else {
+                    // jika jam selesai ada, hitung durasi dari selisih
+                    try {
+                        val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                        val start = format.parse(jamMulai)
+                        val end = format.parse(jamSelesai)
+                        if (start != null && end != null) {
+                            durasiMenit = ((end.time - start.time) / 60000).toInt()
+                        }
+                    } catch (e: Exception) {
+                        durasiMenit = 0
+                    }
                 }
 
                 semuaData.add(
@@ -278,7 +252,10 @@ class MonitoringFragment : Fragment() {
                         jamMulai = formatJam(jamMulai),
                         jamSelesai = formatJam(jamSelesai),
                         statusBayar = statusBayar,
-                        statusTransaksi = statusTransaksi
+                        statusTransaksi = statusTransaksi,
+                        durasiMenit = durasiMenit,  // tambahkan field baru jika ada
+                        jamMulaiFull = jamMulai,     // untuk detail
+                        jamSelesaiFull = jamSelesai
                     )
                 )
             }
@@ -296,67 +273,45 @@ class MonitoringFragment : Fragment() {
     }
 
     private fun cariDetailSewa(transaksiObj: JSONObject?, idPs: String): JSONObject? {
-        if (transaksiObj == null) {
-            return null
-        }
-
-        val detailArray = transaksiObj.optJSONArray("detail_sewa")
-            ?: transaksiObj.optJSONArray("sewa")
-            ?: return null
-
+        if (transaksiObj == null) return null
+        val detailArray = transaksiObj.optJSONArray("detail_sewa") ?: transaksiObj.optJSONArray("sewa") ?: return null
         for (i in 0 until detailArray.length()) {
             val detail = detailArray.getJSONObject(i)
-            val idPsDetail = detail.optString("id_ps", "")
-
-            if (idPsDetail == idPs) {
+            if (detail.optString("id_ps", "") == idPs) {
                 return detail
             }
         }
-
-        if (detailArray.length() > 0) {
-            return detailArray.getJSONObject(0)
-        }
-
-        return null
+        return if (detailArray.length() > 0) detailArray.getJSONObject(0) else null
     }
 
     private fun setupAutoComplete() {
         val listNamaPs = ArrayList<String>()
-
         for (item in semuaData) {
             listNamaPs.add(item.nomorPs)
         }
-
         val adapter = ArrayAdapter(
             requireContext(),
             android.R.layout.simple_dropdown_item_1line,
             listNamaPs
         )
-
         b.actCariPs.setAdapter(adapter)
     }
 
     private fun filterData() {
-        if (!::adapterMonitoring.isInitialized) {
-            return
-        }
+        if (!::adapterMonitoring.isInitialized) return
 
         val keyword = b.actCariPs.text.toString().trim().lowercase()
         val statusPilihan = b.spStatus.selectedItem?.toString() ?: "Semua"
 
         tampilData.clear()
-
-
         for (item in semuaData) {
             val cocokCari = item.nomorPs.lowercase().contains(keyword) ||
                     item.tipePs.lowercase().contains(keyword)
-
             val cocokStatus = when (statusPilihan) {
                 "Semua" -> true
                 "Menunggu" -> isWaiting(item)
                 else -> ubahStatus(item.statusPs).equals(statusPilihan, ignoreCase = true)
             }
-
             if (cocokCari && cocokStatus) {
                 tampilData.add(item)
             }
@@ -366,55 +321,72 @@ class MonitoringFragment : Fragment() {
         b.tvKosong.visibility = if (tampilData.isEmpty()) View.VISIBLE else View.GONE
     }
 
+    // ==================== POPUP MENU ====================
     private fun tampilkanPopupMenu(anchor: View, item: MonitoringPs) {
-
         val popup = PopupMenu(requireContext(), anchor)
         popup.menuInflater.inflate(R.menu.menu_monitoring_pelanggan, popup.menu)
 
         popup.setOnMenuItemClickListener {
-
             when (it.itemId) {
-
                 R.id.itemTambahProduk -> {
-
                     val intent = Intent(requireContext(), TambahPesananActivity::class.java)
-
                     intent.putExtra("mode", "produk")
                     intent.putExtra("id_transaksi", item.idTransaksi)
                     intent.putExtra("id_ps", item.idPs)
                     intent.putExtra("nomor_ps", item.nomorPs)
-
                     startActivity(intent)
                     true
                 }
-
                 R.id.itemTambahWaktu -> {
-
                     val intent = Intent(requireContext(), TambahPesananActivity::class.java)
-
                     intent.putExtra("mode", "waktu")
                     intent.putExtra("id_transaksi", item.idTransaksi)
                     intent.putExtra("id_ps", item.idPs)
                     intent.putExtra("nomor_ps", item.nomorPs)
-
                     startActivity(intent)
                     true
                 }
-
                 R.id.itemBayar -> {
-
                     bukaPembayaran(item)
                     true
                 }
-
+                R.id.itemDetail -> {
+                    tampilkanDetailPesanan(item)
+                    true
+                }
                 else -> false
             }
-
         }
-
         popup.show()
     }
 
+    // ==================== DETAIL PESANAN ====================
+    private fun tampilkanDetailPesanan(item: MonitoringPs) {
+        val message = buildString {
+            appendLine("📋 DETAIL PESANAN")
+            appendLine("═══════════════════════")
+            appendLine("ID Transaksi : ${item.idTransaksi}")
+            appendLine("ID PS        : ${item.idPs}")
+            appendLine("Nomor PS     : ${item.nomorPs}")
+            appendLine("Tipe PS      : ${item.tipePs}")
+            appendLine("Harga Sewa   : Rp ${String.format("%,d", item.hargaSewa).replace(",", ".")} / jam")
+            appendLine("Pelanggan    : ${item.namaPelanggan}")
+            appendLine("Status PS    : ${item.statusPs}")
+            appendLine("Status Transaksi : ${item.statusTransaksi}")
+            appendLine("Jam Mulai    : ${item.jamMulai}")
+            appendLine("Jam Selesai  : ${item.jamSelesai}")
+            appendLine("Durasi       : ${item.durasiMenit} menit")
+            appendLine("Status Bayar : ${item.statusBayar}")
+        }
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Detail Pesanan")
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
+    // ==================== FUNGSI LAINNYA ====================
     private fun bukaPemesanan(item: MonitoringPs) {
         val intent = Intent(requireContext(), PemesananActivity::class.java)
         intent.putExtra("id_ps", item.idPs)
@@ -425,45 +397,27 @@ class MonitoringFragment : Fragment() {
     }
 
     private fun bukaPembayaran(item: MonitoringPs) {
-
-        val intent = Intent(
-            requireContext(),
-            PembayaranActivity::class.java
-        )
-
+        val intent = Intent(requireContext(), PembayaranActivity::class.java)
         intent.putExtra("id_transaksi", item.idTransaksi)
         intent.putExtra("nomor_ps", item.nomorPs)
         intent.putExtra("status_bayar", item.statusBayar)
         intent.putExtra("total", 0L)
-
         startActivity(intent)
-
     }
 
     private fun isWaiting(item: MonitoringPs): Boolean {
         val statusTransaksi = item.statusTransaksi.lowercase()
         val statusPs = item.statusPs.lowercase()
-
-        return statusTransaksi == "waiting" ||
-                statusTransaksi == "pending" ||
-                statusTransaksi == "menunggu" ||
-                statusTransaksi == "menunggu_persetujuan" ||
-                statusPs == "waiting" ||
-                statusPs == "pending" ||
-                statusPs == "menunggu"
+        return statusTransaksi in listOf("waiting", "pending", "menunggu", "menunggu_persetujuan") ||
+                statusPs in listOf("waiting", "pending", "menunggu")
     }
 
     private fun isMilikSaya(item: MonitoringPs): Boolean {
-        val pref = requireContext().getSharedPreferences("user_session", Context.MODE_PRIVATE)
-        val idUserLogin = pref.getString("id_user", "") ?: ""
-
         return idUserLogin.isNotEmpty() && item.idUserTransaksi == idUserLogin
     }
 
     private fun ubahStatus(status: String): String {
-        val s = status.lowercase()
-
-        return when (s) {
+        return when (status.lowercase()) {
             "tersedia", "available" -> "Tersedia"
             "digunakan", "dipakai", "used", "rented" -> "Digunakan"
             "maintenance", "perbaikan" -> "Maintenance"
@@ -472,55 +426,27 @@ class MonitoringFragment : Fragment() {
         }
     }
 
-    private fun isDigunakan(status: String): Boolean {
-        val s = status.lowercase()
-        return s == "digunakan" || s == "dipakai" || s == "used" || s == "rented"
-    }
-
     private fun isTersedia(status: String): Boolean {
-        val s = status.lowercase()
-        return s == "tersedia" || s == "available"
+        return status.lowercase() in listOf("tersedia", "available")
     }
 
     private fun formatJam(value: String): String {
-
-        if (value.isEmpty() || value == "-" || value == "null") {
-            return "-"
-        }
-
+        if (value.isEmpty() || value == "-" || value == "null") return "-"
         return try {
-
-            if (value.length >= 16) {
-
-                value.substring(11,16)
-
-            } else {
-
-                value
-
-            }
-
-        } catch (e: Exception){
-
+            if (value.length >= 16) value.substring(11, 16) else value
+        } catch (e: Exception) {
             "-"
-
         }
-
     }
 
     private fun hitungJamSelesai(jamMulai: String, durasiMenit: Int): String {
-        if (jamMulai.isEmpty() || jamMulai == "-" || durasiMenit <= 0) {
-            return "-"
-        }
-
+        if (jamMulai.isEmpty() || jamMulai == "-" || durasiMenit <= 0) return "-"
         return try {
             val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
             val date = format.parse(jamMulai)
-
             val calendar = Calendar.getInstance()
             calendar.time = date!!
             calendar.add(Calendar.MINUTE, durasiMenit)
-
             format.format(calendar.time)
         } catch (e: Exception) {
             "-"
