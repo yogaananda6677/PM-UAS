@@ -1,34 +1,117 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Tambah Produk / Waktu"
-        android:textSize="20sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/tvInfoTambah"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Info Tambah" />
+        android:orientation="vertical"
+        android:padding="16dp">
 
-    <Button
-        android:id="@+id/btnSimpanTambah"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Simpan Tambahan" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tambah Produk / Waktu"
+            android:textStyle="bold"
+            android:textSize="20sp"/>
 
-    <Button
-        android:id="@+id/btnKembali"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Kembali" />
-</LinearLayout>
+        <TextView
+            android:id="@+id/tvInfoTambah"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textStyle="bold"/>
+
+        <!-- MODE -->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mode"
+            android:layout_marginTop="20dp"/>
+
+        <TextView
+            android:id="@+id/tvMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tambah Produk"
+            android:textStyle="bold"
+            android:textSize="16sp"/>
+
+        <!-- Spinner Produk -->
+
+        <LinearLayout
+            android:id="@+id/layoutProduk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Produk"
+                android:layout_marginTop="16dp"/>
+
+            <Spinner
+                android:id="@+id/spProduk"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+
+        <!-- Spinner Waktu -->
+
+        <LinearLayout
+            android:id="@+id/layoutWaktu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tambah Waktu"
+                android:layout_marginTop="16dp"/>
+
+            <Spinner
+                android:id="@+id/spWaktu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+
+        <!-- Qty -->
+
+        <TextView
+            android:id="@+id/tvQty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Jumlah"
+            android:layout_marginTop="16dp"/>
+
+        <EditText
+            android:id="@+id/etQty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="1"/>
+
+        <Button
+            android:id="@+id/btnSimpanTambah"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Simpan"/>
+
+        <Button
+            android:id="@+id/btnKembali"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Kembali"/>
+
+    </LinearLayout>
+
+</ScrollView>

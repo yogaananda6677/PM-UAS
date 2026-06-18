@@ -52,11 +52,15 @@
         android:textColor="#888780"
         android:visibility="gone" />
 
-    <ListView
-        android:id="@+id/lvMonitoring"
+    <GridView
+        android:id="@+id/gvMonitoring"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginTop="8dp"
-        android:layout_weight="1" />
+        android:numColumns="2"
+        android:horizontalSpacing="8dp"
+        android:verticalSpacing="8dp"
+        android:stretchMode="columnWidth"/>
 
 </LinearLayout>
