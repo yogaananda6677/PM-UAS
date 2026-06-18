@@ -40,7 +40,11 @@ android {
             buildConfigField(
                 "String",
                 "BASE_URL",
+<<<<<<< HEAD
                 "\"${localProperties.getProperty("BASE_URL_DEBUG") ?: "http://192.168.48.231:8000/api/"}\""
+=======
+                "\"${localProperties.getProperty("BASE_URL_DEBUG") ?: "http://192.168.1.4:8000/api/"}\""
+>>>>>>> 02cb43cb3902a519526c571d0776f9bf1dcf8178
             )
         }
 
@@ -53,7 +57,11 @@ android {
             buildConfigField(
                 "String",
                 "BASE_URL",
+<<<<<<< HEAD
                 "\"${localProperties.getProperty("BASE_URL_RELEASE") ?: "http://192.168.48.231:8000/api/"}\""
+=======
+                "\"${localProperties.getProperty("BASE_URL_RELEASE") ?: "http://192.168.1.4:8000/api/"}\""
+>>>>>>> 02cb43cb3902a519526c571d0776f9bf1dcf8178
             )
         }
     }
@@ -78,6 +86,9 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.3.1")
     implementation("org.osmdroid:osmdroid-android:6.1.18")
     implementation("com.github.mumayank:AirLocation:2.5.2")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("com.google.zxing:core:3.5.3")
+    implementation("com.google.android.material:material:1.12.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -1,5 +1,6 @@
 package ananda.yoga.projectuasmobile.fragment
 
+import ananda.yoga.projectuasmobile.adapter.MonitoringAdapter
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -36,7 +37,7 @@ class MonitoringFragment : Fragment() {
 
     private val semuaData = ArrayList<MonitoringPs>()
     private val tampilData = ArrayList<MonitoringPs>()
-    private lateinit var adapterMonitoring: ArrayAdapter<String>
+    private lateinit var adapterMonitoring: MonitoringAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -57,46 +58,52 @@ class MonitoringFragment : Fragment() {
         getDataMonitoring()
     }
 
+    override fun onResume() {
+        super.onResume()
+        getDataMonitoring()
+    }
+
     private fun setupListView() {
-        adapterMonitoring = ArrayAdapter(
+
+        adapterMonitoring = MonitoringAdapter(
             requireContext(),
-            android.R.layout.simple_list_item_1,
-            ArrayList<String>()
+            tampilData
         )
 
-        b.lvMonitoring.adapter = adapterMonitoring
+        b.gvMonitoring.adapter = adapterMonitoring
 
-        b.lvMonitoring.setOnItemClickListener { _, view, position, _ ->
+        b.gvMonitoring.setOnItemClickListener { _, view, position, _ ->
+
             val item = tampilData[position]
 
             if (isWaiting(item)) {
+
                 Toast.makeText(
                     requireContext(),
-                    "Pemesanan ${item.nomorPs} masih menunggu persetujuan admin",
-                    Toast.LENGTH_LONG
+                    "Pemesanan masih menunggu persetujuan admin",
+                    Toast.LENGTH_SHORT
                 ).show()
 
             } else if (isTersedia(item.statusPs)) {
+
                 bukaPemesanan(item)
 
             } else if (isMilikSaya(item)) {
+
                 tampilkanPopupMenu(view, item)
 
-            } else if (isDigunakan(item.statusPs) || item.idTransaksi.isNotEmpty()) {
-                Toast.makeText(
-                    requireContext(),
-                    "${item.nomorPs} sedang digunakan. Berakhir jam ${formatJam(item.jamSelesai)}",
-                    Toast.LENGTH_LONG
-                ).show()
-
             } else {
+
                 Toast.makeText(
                     requireContext(),
-                    "${item.nomorPs} belum bisa dipesan",
+                    "Playstation sedang digunakan",
                     Toast.LENGTH_SHORT
                 ).show()
+
             }
+
         }
+
     }
 
     private fun setupSpinner() {
@@ -268,8 +275,8 @@ class MonitoringFragment : Fragment() {
                         idTransaksi = idTransaksi,
                         idUserTransaksi = idUserTransaksi,
                         namaPelanggan = namaPelanggan,
-                        jamMulai = jamMulai,
-                        jamSelesai = jamSelesai,
+                        jamMulai = formatJam(jamMulai),
+                        jamSelesai = formatJam(jamSelesai),
                         statusBayar = statusBayar,
                         statusTransaksi = statusTransaksi
                     )
@@ -338,7 +345,7 @@ class MonitoringFragment : Fragment() {
         val statusPilihan = b.spStatus.selectedItem?.toString() ?: "Semua"
 
         tampilData.clear()
-        adapterMonitoring.clear()
+
 
         for (item in semuaData) {
             val cocokCari = item.nomorPs.lowercase().contains(keyword) ||
@@ -352,7 +359,6 @@ class MonitoringFragment : Fragment() {
 
             if (cocokCari && cocokStatus) {
                 tampilData.add(item)
-                adapterMonitoring.add(buatTextList(item))
             }
         }
 
@@ -360,44 +366,50 @@ class MonitoringFragment : Fragment() {
         b.tvKosong.visibility = if (tampilData.isEmpty()) View.VISIBLE else View.GONE
     }
 
-    private fun buatTextList(item: MonitoringPs): String {
-        if (isWaiting(item)) {
-            return "${item.nomorPs} | ${item.tipePs}\nMENUNGGU PERSETUJUAN ADMIN"
-        }
-
-        if (isTersedia(item.statusPs)) {
-            return "${item.nomorPs} | ${item.tipePs}\nTERSEDIA - klik untuk pesan"
-        }
-
-        if (isMilikSaya(item)) {
-            return "${item.nomorPs} | ${item.tipePs}\nPUNYAKU - klik untuk bayar / tambah\nBerakhir: ${formatJam(item.jamSelesai)} | Bayar: ${item.statusBayar}"
-        }
-
-        if (isDigunakan(item.statusPs)) {
-            return "${item.nomorPs} | ${item.tipePs}\nDIGUNAKAN ORANG LAIN\nBerakhir: ${formatJam(item.jamSelesai)}"
-        }
-
-        return "${item.nomorPs} | ${item.tipePs}\n${item.statusPs}"
-    }
-
     private fun tampilkanPopupMenu(anchor: View, item: MonitoringPs) {
+
         val popup = PopupMenu(requireContext(), anchor)
         popup.menuInflater.inflate(R.menu.menu_monitoring_pelanggan, popup.menu)
 
-        popup.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.itemBayar -> {
-                    bukaPembayaran(item)
+        popup.setOnMenuItemClickListener {
+
+            when (it.itemId) {
+
+                R.id.itemTambahProduk -> {
+
+                    val intent = Intent(requireContext(), TambahPesananActivity::class.java)
+
+                    intent.putExtra("mode", "produk")
+                    intent.putExtra("id_transaksi", item.idTransaksi)
+                    intent.putExtra("id_ps", item.idPs)
+                    intent.putExtra("nomor_ps", item.nomorPs)
+
+                    startActivity(intent)
                     true
                 }
 
-                R.id.itemTambah -> {
-                    bukaTambahPesanan(item)
+                R.id.itemTambahWaktu -> {
+
+                    val intent = Intent(requireContext(), TambahPesananActivity::class.java)
+
+                    intent.putExtra("mode", "waktu")
+                    intent.putExtra("id_transaksi", item.idTransaksi)
+                    intent.putExtra("id_ps", item.idPs)
+                    intent.putExtra("nomor_ps", item.nomorPs)
+
+                    startActivity(intent)
+                    true
+                }
+
+                R.id.itemBayar -> {
+
+                    bukaPembayaran(item)
                     true
                 }
 
                 else -> false
             }
+
         }
 
         popup.show()
@@ -413,19 +425,19 @@ class MonitoringFragment : Fragment() {
     }
 
     private fun bukaPembayaran(item: MonitoringPs) {
-        val intent = Intent(requireContext(), PembayaranActivity::class.java)
-        intent.putExtra("id_transaksi", item.idTransaksi)
-        intent.putExtra("nomor_ps", item.nomorPs)
-        intent.putExtra("total", 0L)
-        startActivity(intent)
-    }
 
-    private fun bukaTambahPesanan(item: MonitoringPs) {
-        val intent = Intent(requireContext(), TambahPesananActivity::class.java)
+        val intent = Intent(
+            requireContext(),
+            PembayaranActivity::class.java
+        )
+
         intent.putExtra("id_transaksi", item.idTransaksi)
-        intent.putExtra("id_ps", item.idPs)
         intent.putExtra("nomor_ps", item.nomorPs)
+        intent.putExtra("status_bayar", item.statusBayar)
+        intent.putExtra("total", 0L)
+
         startActivity(intent)
+
     }
 
     private fun isWaiting(item: MonitoringPs): Boolean {
@@ -471,15 +483,29 @@ class MonitoringFragment : Fragment() {
     }
 
     private fun formatJam(value: String): String {
+
         if (value.isEmpty() || value == "-" || value == "null") {
             return "-"
         }
 
-        if (value.length >= 16) {
-            return value.substring(11, 16)
+        return try {
+
+            if (value.length >= 16) {
+
+                value.substring(11,16)
+
+            } else {
+
+                value
+
+            }
+
+        } catch (e: Exception){
+
+            "-"
+
         }
 
-        return value
     }
 
     private fun hitungJamSelesai(jamMulai: String, durasiMenit: Int): String {

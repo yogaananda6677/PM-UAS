@@ -2,11 +2,15 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/itemBayar"
-        android:title="Bayar" />
+        android:id="@+id/itemTambahProduk"
+        android:title="Tambah Produk" />
 
     <item
-        android:id="@+id/itemTambah"
-        android:title="Tambah Produk/Waktu" />
+        android:id="@+id/itemTambahWaktu"
+        android:title="Tambah Waktu" />
+
+    <item
+        android:id="@+id/itemBayar"
+        android:title="Bayar" />
 
 </menu>
