@@ -19,6 +19,10 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import ananda.yoga.projectuasmobile.LoginActivity
 import ananda.yoga.projectuasmobile.R
+import android.widget.PopupMenu
+import android.content.ClipboardManager
+import android.content.ClipData
+import android.widget.EditText
 import de.hdodenhof.circleimageview.CircleImageView
 
 class ProfilFragment : Fragment(R.layout.fragment_profil) {
@@ -26,7 +30,6 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
     private lateinit var profileImage: CircleImageView
     private lateinit var sharedPref: android.content.SharedPreferences
 
-    // Launcher kamera — hasilnya Bitmap langsung
     private val cameraLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -47,36 +50,53 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
         sharedPref = requireActivity().getSharedPreferences("user_session", Context.MODE_PRIVATE)
         profileImage = view.findViewById(R.id.profileImage)
 
-        // Set label & value
-        view.findViewById<View>(R.id.rowName)
-            .findViewById<TextView>(R.id.tvLabel).text = "Nama"
-        view.findViewById<View>(R.id.rowName)
-            .findViewById<TextView>(R.id.tvValue).text = sharedPref.getString("nama", "-")
+        val rowName = view.findViewById<View>(R.id.rowName)
+        val rowUsername = view.findViewById<View>(R.id.rowUsername)
+        val rowEmail = view.findViewById<View>(R.id.rowEmail)
 
-        view.findViewById<View>(R.id.rowUsername)
-            .findViewById<TextView>(R.id.tvLabel).text = "Username"
-        view.findViewById<View>(R.id.rowUsername)
-            .findViewById<TextView>(R.id.tvValue).text = sharedPref.getString("username", "-")
+        val tvNameLabel = rowName.findViewById<TextView>(R.id.tvLabel)
+        val tvName = rowName.findViewById<TextView>(R.id.tvValue)
 
-        view.findViewById<View>(R.id.rowEmail)
-            .findViewById<TextView>(R.id.tvLabel).text = "Email"
-        view.findViewById<View>(R.id.rowEmail)
-            .findViewById<TextView>(R.id.tvValue).text = sharedPref.getString("email", "-")
+        val tvUsernameLabel = rowUsername.findViewById<TextView>(R.id.tvLabel)
+        val tvUsername = rowUsername.findViewById<TextView>(R.id.tvValue)
 
-        // Load foto profil tersimpan
+        val tvEmailLabel = rowEmail.findViewById<TextView>(R.id.tvLabel)
+        val tvEmail = rowEmail.findViewById<TextView>(R.id.tvValue)
+
+        tvNameLabel.text = "Nama"
+        tvName.text = sharedPref.getString("nama", "-")
+
+        tvUsernameLabel.text = "Username"
+        tvUsername.text = sharedPref.getString("username", "-")
+
+        tvEmailLabel.text = "Email"
+        tvEmail.text = sharedPref.getString("email", "-")
+
+        rowName.setOnLongClickListener {
+            showInfoContextMenu(it, "nama", tvName)
+            true
+        }
+
+        rowUsername.setOnLongClickListener {
+            showInfoContextMenu(it, "username", tvUsername)
+            true
+        }
+
+        rowEmail.setOnLongClickListener {
+            showInfoContextMenu(it, "email", tvEmail)
+            true
+        }
+
         loadSavedImage()
 
-        // Tombol back
         view.findViewById<ImageView>(R.id.btnBack).setOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
 
-        // Edit foto → langsung buka kamera
         view.findViewById<TextView>(R.id.tvEditPhoto).setOnClickListener {
             showImagePicker()
         }
 
-        // Ganti password
         view.findViewById<TextView>(R.id.menuPassword).setOnClickListener {
             requireActivity().supportFragmentManager.beginTransaction()
                 .replace(R.id.frameContainer, GantiPasswordFragment())
@@ -84,7 +104,6 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
                 .commit()
         }
 
-        // Logout
         view.findViewById<TextView>(R.id.menuLogout).setOnClickListener {
             showLogoutDialog()
         }
@@ -148,7 +167,6 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
         cameraLauncher.launch(intent)
     }
 
-    // Tambah launcher galeri di atas cameraLauncher
     private val galleryLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -175,14 +193,12 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
     }
 
     private fun loadSavedImage() {
-        // Cek dulu dari galeri (URI)
         val savedUri = sharedPref.getString("profile_image_uri", null)
         if (savedUri != null) {
             profileImage.setImageURI(Uri.parse(savedUri))
             return
         }
 
-        // Kalau tidak ada, cek dari kamera (file)
         val filename = sharedPref.getString("profile_image_path", null)
         if (filename != null) {
             try {
@@ -196,6 +212,75 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
         }
     }
 
+    private fun showInfoContextMenu(
+        anchor: View,
+        key: String,
+        textView: TextView
+    ) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menuInflater.inflate(R.menu.menu_profile_info, popup.menu)
+
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+
+                R.id.menu_copy -> {
+                    val clipboard = requireContext()
+                        .getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+                    val clip = ClipData.newPlainText(
+                        key,
+                        textView.text.toString()
+                    )
+
+                    clipboard.setPrimaryClip(clip)
+
+                    Toast.makeText(
+                        requireContext(),
+                        "Berhasil dicopy",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    true
+                }
+
+                R.id.menu_edit -> {
+                    showEditDialog(key, textView)
+                    true
+                }
+
+                else -> false
+            }
+        }
+
+        popup.show()
+    }
+    private fun showEditDialog(
+        key: String,
+        textView: TextView
+    ) {
+        val editText = EditText(requireContext())
+        editText.setText(textView.text.toString())
+        editText.setSelection(editText.text.length)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Edit Data")
+            .setView(editText)
+            .setPositiveButton("Simpan") { _, _ ->
+                val newValue = editText.text.toString().trim()
+
+                if (newValue.isNotEmpty()) {
+                    sharedPref.edit().putString(key, newValue).apply()
+                    textView.text = newValue
+
+                    Toast.makeText(
+                        requireContext(),
+                        "Data berhasil diubah",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            .setNegativeButton("Batal", null)
+            .show()
+    }
     private fun showLogoutDialog() {
         AlertDialog.Builder(requireContext())
             .setTitle("Logout")
