@@ -1,14 +1,128 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".fragment.RiwayatFragment">
+    android:orientation="vertical"
+    android:background="#F0F4F8">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <!-- Header -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_header_infinity"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp">
 
-</FrameLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Riwayat Pemesanan"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Daftar pemesanan PS kamu"
+            android:textColor="#B0C8E0"
+            android:textSize="12sp"
+            android:layout_marginTop="2dp"/>
+    </LinearLayout>
+
+    <!-- Filter Tanggal -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical"
+        android:background="@color/white">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginEnd="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Dari Tanggal"
+                android:textSize="11sp"
+                android:textColor="#888780"/>
+
+            <TextView
+                android:id="@+id/tvTanggalMulai"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pilih tanggal"
+                android:textSize="13sp"
+                android:padding="8dp"
+                android:background="@drawable/bg_input"
+                android:layout_marginTop="4dp"
+                android:drawableEnd="@drawable/ic_history_24"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sampai Tanggal"
+                android:textSize="11sp"
+                android:textColor="#888780"/>
+
+            <TextView
+                android:id="@+id/tvTanggalSelesai"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Pilih tanggal"
+                android:textSize="13sp"
+                android:padding="8dp"
+                android:background="@drawable/bg_input"
+                android:layout_marginTop="4dp"
+                android:drawableEnd="@drawable/ic_history_24"/>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnFilter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Filter"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_button_primary"
+            android:padding="8dp"/>
+    </LinearLayout>
+
+    <!-- Label jumlah -->
+    <TextView
+        android:id="@+id/tvJumlahRiwayat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp"
+        android:text="Memuat data..."
+        android:textSize="12sp"
+        android:textColor="#888780"/>
+
+    <!-- ListView Riwayat -->
+    <ListView
+        android:id="@+id/lvRiwayat"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="@color/gray_border"
+        android:dividerHeight="1dp"/>
+
+</LinearLayout>
