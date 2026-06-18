@@ -40,11 +40,8 @@ android {
             buildConfigField(
                 "String",
                 "BASE_URL",
-<<<<<<< HEAD
                 "\"${localProperties.getProperty("BASE_URL_DEBUG") ?: "http://192.168.48.231:8000/api/"}\""
-=======
-                "\"${localProperties.getProperty("BASE_URL_DEBUG") ?: "http://192.168.1.4:8000/api/"}\""
->>>>>>> 02cb43cb3902a519526c571d0776f9bf1dcf8178
+
             )
         }
 
@@ -57,11 +54,7 @@ android {
             buildConfigField(
                 "String",
                 "BASE_URL",
-<<<<<<< HEAD
                 "\"${localProperties.getProperty("BASE_URL_RELEASE") ?: "http://192.168.48.231:8000/api/"}\""
-=======
-                "\"${localProperties.getProperty("BASE_URL_RELEASE") ?: "http://192.168.1.4:8000/api/"}\""
->>>>>>> 02cb43cb3902a519526c571d0776f9bf1dcf8178
             )
         }
     }
@@ -91,6 +84,8 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("com.google.zxing:core:3.5.2")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation ("com.github.bumptech.glide:glide:4.15.1")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

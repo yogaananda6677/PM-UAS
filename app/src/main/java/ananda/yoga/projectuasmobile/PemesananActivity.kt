@@ -23,7 +23,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
-class PemesananActivity : AppCompatActivity() {
+class PemesananActivity : AppCompatActivity(), View.OnClickListener {
 
     private lateinit var b: ActivityPemesananBinding
 
@@ -93,9 +93,7 @@ class PemesananActivity : AppCompatActivity() {
             }
         }
 
-        b.btnPilihTanggalJam.setOnClickListener {
-            tampilkanDateTimePicker()
-        }
+        b.btnPilihTanggalJam.setOnClickListener(this)
     }
 
     private fun tampilkanDateTimePicker() {
@@ -165,7 +163,6 @@ class PemesananActivity : AppCompatActivity() {
 
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         b.spJamSelesai.adapter = adapter
-
         b.spJamSelesai.setSelection(1)
     }
 
@@ -178,16 +175,17 @@ class PemesananActivity : AppCompatActivity() {
     }
 
     private fun setupTombol() {
-        b.btnTambahProduk.setOnClickListener {
-            tambahProdukDariSpinner()
-        }
+        b.btnTambahProduk.setOnClickListener(this)
+        b.btnSimpanPesanan.setOnClickListener(this)
+        b.btnKembali.setOnClickListener(this)
+    }
 
-        b.btnSimpanPesanan.setOnClickListener {
-            kirimPemesanan()
-        }
-
-        b.btnKembali.setOnClickListener {
-            finish()
+    override fun onClick(v: View?) {
+        when (v?.id) {
+            R.id.btnTambahProduk -> tambahProdukDariSpinner()
+            R.id.btnSimpanPesanan -> kirimPemesanan()
+            R.id.btnKembali -> finish()
+            R.id.btnPilihTanggalJam -> tampilkanDateTimePicker()
         }
     }
 

@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#F5F7FA">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -9,128 +11,169 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Judul -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Pemesanan Playstation"
             android:textColor="#1A3A5C"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
 
+        <!-- Info PS (dengan background biru muda) -->
         <TextView
             android:id="@+id/tvInfoPs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:background="#E3F2FD"
+            android:padding="12dp"
             android:text="Info PS"
-            android:textSize="15sp" />
+            android:textSize="15sp"
+            android:textColor="#1A3A5C"
+            android:layout_marginBottom="16dp" />
 
+        <!-- Label Jenis Pemesanan -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:text="Jenis Pemesanan"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:textColor="#1A3A5C"
+            android:layout_marginBottom="4dp" />
 
         <RadioGroup
             android:id="@+id/rgJenisPesan"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
 
             <RadioButton
                 android:id="@+id/rbMainSekarang"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:text="Main sekarang" />
+                android:text="Main sekarang"
+                android:textColor="#1A3A5C" />
 
             <RadioButton
                 android:id="@+id/rbBookingNanti"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Booking nanti" />
+                android:text="Booking nanti"
+                android:textColor="#1A3A5C" />
         </RadioGroup>
 
+        <!-- Jam Mulai -->
         <TextView
             android:id="@+id/tvJamMulai"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Jam mulai" />
+            android:layout_marginBottom="8dp"
+            android:text="Jam mulai"
+            android:textColor="#1A3A5C" />
 
+        <!-- Tombol Pilih Tanggal & Jam -->
         <Button
             android:id="@+id/btnPilihTanggalJam"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Pilih Tanggal dan Jam Booking"
-            android:visibility="gone" />
+            android:backgroundTint="#1A3A5C"
+            android:textColor="#FFFFFF"
+            android:visibility="gone"
+            android:layout_marginBottom="12dp" />
 
+        <!-- Label Main sampai jam -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
             android:text="Main sampai jam"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:textColor="#1A3A5C"
+            android:layout_marginBottom="4dp" />
 
         <Spinner
             android:id="@+id/spJamSelesai"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
 
+            android:padding="8dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Label Tambah Produk -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:text="Tambah Produk"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:textColor="#1A3A5C"
+            android:layout_marginBottom="4dp" />
 
         <Spinner
             android:id="@+id/spProduk"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp" />
 
         <Button
             android:id="@+id/btnTambahProduk"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Tambah Produk" />
+            android:text="Tambah Produk"
+            android:backgroundTint="#1A3A5C"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp" />
 
+        <!-- ListView produk pesanan -->
         <ListView
             android:id="@+id/lvProdukPesanan"
             android:layout_width="match_parent"
             android:layout_height="180dp"
-            android:layout_marginTop="8dp" />
+            android:background="#FFFFFF"
+            android:elevation="2dp"
+            android:padding="4dp"
+            android:layout_marginBottom="12dp" />
 
+        <!-- Total -->
         <TextView
             android:id="@+id/tvTotal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
             android:text="Total sementara: Rp 0"
             android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:textColor="#1A3A5C"
+            android:layout_marginBottom="16dp" />
 
+        <!-- Tombol Buat Booking -->
         <Button
             android:id="@+id/btnSimpanPesanan"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Buat Booking" />
+            android:text="Buat Booking"
+            android:backgroundTint="#1A3A5C"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="8dp" />
 
+        <!-- Tombol Kembali -->
         <Button
             android:id="@+id/btnKembali"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Kembali" />
+            android:text="Kembali"
+            android:backgroundTint="#78909C"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="8dp" />
 
+        <!-- ProgressBar -->
         <ProgressBar
             android:id="@+id/progressBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:layout_marginTop="12dp"
             android:visibility="gone" />
 
     </LinearLayout>

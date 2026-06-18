@@ -1,26 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="10dp"
-    android:layout_marginVertical="6dp"
-    app:cardCornerRadius="14dp"
-    app:cardElevation="5dp"
+    android:layout_marginHorizontal="4dp"
+    android:layout_marginVertical="4dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="3dp"
     app:cardUseCompatPadding="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="14dp">
+        android:padding="16dp">
 
-        <!-- Header -->
-
+        <!-- Baris atas: Nomor PS dan Status -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:gravity="center_vertical">
 
             <TextView
@@ -28,7 +27,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="🎮 PS 01"
+                android:text="PS 01"
                 android:textColor="#1A3A5C"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -37,13 +36,12 @@
                 android:id="@+id/tvStatusPs"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="#4CAF50"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="4dp"
                 android:text="TERSEDIA"
                 android:textColor="#FFFFFF"
-                android:textStyle="bold" />
-
+                android:textStyle="bold"
+                android:background="#4CAF50" />
         </LinearLayout>
 
         <View
@@ -52,37 +50,42 @@
             android:layout_marginVertical="10dp"
             android:background="#E0E0E0"/>
 
+        <!-- Detail -->
         <TextView
             android:id="@+id/tvTipePs"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🎮 Tipe : PS5"
-            android:textSize="15sp"/>
+            android:text="Tipe : PS5"
+            android:textSize="15sp"
+            android:textColor="#424242" />
 
         <TextView
             android:id="@+id/tvPelanggan"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="👤 Pelanggan : -"
-            android:textSize="15sp"/>
+            android:text="Pelanggan : -"
+            android:textSize="15sp"
+            android:textColor="#424242" />
 
         <TextView
             android:id="@+id/tvJam"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="🕒 Jam : -"
-            android:textSize="15sp"/>
+            android:text="Jam : -"
+            android:textSize="15sp"
+            android:textColor="#424242" />
 
         <TextView
             android:id="@+id/tvBayar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="💰 Pembayaran : BELUM LUNAS"
+            android:text="Pembayaran : BELUM LUNAS"
             android:textStyle="bold"
-            android:textSize="15sp"/>
+            android:textSize="15sp"
+            android:textColor="#D32F2F" />
 
     </LinearLayout>
 

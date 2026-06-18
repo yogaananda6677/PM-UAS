@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#F5F7FA">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,45 +15,51 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Tambah Produk / Waktu"
-            android:textStyle="bold"
-            android:textSize="20sp"/>
+            android:textColor="#1A3A5C"
+            android:textSize="22sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvInfoTambah"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:textStyle="bold"/>
-
-        <!-- MODE -->
+            android:layout_marginTop="12dp"
+            android:background="#E3F2FD"
+            android:padding="12dp"
+            android:text="Info transaksi"
+            android:textColor="#1A3A5C"
+            android:textSize="15sp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Mode"
-            android:layout_marginTop="20dp"/>
+            android:layout_marginTop="16dp"
+            android:textColor="#1A3A5C"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvMode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Tambah Produk"
-            android:textStyle="bold"
-            android:textSize="16sp"/>
+            android:textColor="#1A3A5C"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
-        <!-- Spinner Produk -->
-
+        <!-- Layout Produk -->
         <LinearLayout
             android:id="@+id/layoutProduk"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:layout_marginTop="8dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Produk"
-                android:layout_marginTop="16dp"/>
+                android:text="Pilih Produk"
+                android:textColor="#1A3A5C" />
 
             <Spinner
                 android:id="@+id/spProduk"
@@ -61,57 +68,62 @@
 
         </LinearLayout>
 
-        <!-- Spinner Waktu -->
-
+        <!-- Layout Waktu -->
         <LinearLayout
             android:id="@+id/layoutWaktu"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:layout_marginTop="8dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Tambah Waktu"
-                android:layout_marginTop="16dp"/>
+                android:text="Tambahkan Waktu"
+                android:textColor="#1A3A5C" />
 
             <Spinner
                 android:id="@+id/spWaktu"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-
+                android:layout_height="wrap_content"
+                android:background="@drawable/spinner_border" />
         </LinearLayout>
 
         <!-- Qty -->
-
         <TextView
             android:id="@+id/tvQty"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Jumlah"
-            android:layout_marginTop="16dp"/>
+            android:layout_marginTop="16dp"
+            android:textColor="#1A3A5C" />
 
         <EditText
             android:id="@+id/etQty"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="number"
-            android:text="1"/>
+            android:text="1"
+            android:padding="12dp" />
 
         <Button
             android:id="@+id/btnSimpanTambah"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Simpan"/>
+            android:layout_marginTop="16dp"
+            android:text="Simpan"
+            android:backgroundTint="#1A3A5C"
+            android:textColor="#FFFFFF" />
 
         <Button
             android:id="@+id/btnKembali"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Kembali"/>
+            android:layout_marginTop="8dp"
+            android:text="Kembali"
+            android:backgroundTint="#78909C"
+            android:textColor="#FFFFFF" />
 
     </LinearLayout>
-
 </ScrollView>

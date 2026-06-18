@@ -12,5 +12,9 @@ data class MonitoringPs(
     val jamMulai: String,
     val jamSelesai: String,
     val statusBayar: String,
-    val statusTransaksi: String
+    val statusTransaksi: String,
+    // tambahan untuk detail
+    val durasiMenit: Int = 0,
+    val jamMulaiFull: String = "",
+    val jamSelesaiFull: String = ""
 )
