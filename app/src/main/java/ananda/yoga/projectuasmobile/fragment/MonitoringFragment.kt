@@ -53,7 +53,6 @@ class MonitoringFragment : Fragment(), View.OnClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Ambil id user login untuk keperluan adapter dan pengecekan kepemilikan
         val pref = requireContext().getSharedPreferences("user_session", Context.MODE_PRIVATE)
         idUserLogin = pref.getString("id_user", "") ?: ""
 
@@ -220,13 +219,11 @@ class MonitoringFragment : Fragment(), View.OnClickListener {
                 val jamMulai = detailSewa?.optString("jam_mulai", "-") ?: "-"
                 var jamSelesai = detailSewa?.optString("jam_selesai", "-") ?: "-"
 
-                // Hitung durasi jika jam selesai tidak ada
                 var durasiMenit = 0
                 if (jamSelesai == "null" || jamSelesai == "-" || jamSelesai.isEmpty()) {
                     durasiMenit = detailSewa?.optInt("durasi_menit", 0) ?: 0
                     jamSelesai = hitungJamSelesai(jamMulai, durasiMenit)
                 } else {
-                    // jika jam selesai ada, hitung durasi dari selisih
                     try {
                         val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                         val start = format.parse(jamMulai)
@@ -253,8 +250,8 @@ class MonitoringFragment : Fragment(), View.OnClickListener {
                         jamSelesai = formatJam(jamSelesai),
                         statusBayar = statusBayar,
                         statusTransaksi = statusTransaksi,
-                        durasiMenit = durasiMenit,  // tambahkan field baru jika ada
-                        jamMulaiFull = jamMulai,     // untuk detail
+                        durasiMenit = durasiMenit,
+                        jamMulaiFull = jamMulai,
                         jamSelesaiFull = jamSelesai
                     )
                 )
@@ -321,7 +318,6 @@ class MonitoringFragment : Fragment(), View.OnClickListener {
         b.tvKosong.visibility = if (tampilData.isEmpty()) View.VISIBLE else View.GONE
     }
 
-    // ==================== POPUP MENU ====================
     private fun tampilkanPopupMenu(anchor: View, item: MonitoringPs) {
         val popup = PopupMenu(requireContext(), anchor)
         popup.menuInflater.inflate(R.menu.menu_monitoring_pelanggan, popup.menu)
@@ -360,7 +356,6 @@ class MonitoringFragment : Fragment(), View.OnClickListener {
         popup.show()
     }
 
-    // ==================== DETAIL PESANAN ====================
     private fun tampilkanDetailPesanan(item: MonitoringPs) {
         val message = buildString {
             appendLine("📋 DETAIL PESANAN")
@@ -386,7 +381,6 @@ class MonitoringFragment : Fragment(), View.OnClickListener {
             .show()
     }
 
-    // ==================== FUNGSI LAINNYA ====================
     private fun bukaPemesanan(item: MonitoringPs) {
         val intent = Intent(requireContext(), PemesananActivity::class.java)
         intent.putExtra("id_ps", item.idPs)

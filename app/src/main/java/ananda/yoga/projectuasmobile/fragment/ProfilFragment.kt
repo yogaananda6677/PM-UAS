@@ -35,7 +35,6 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
     private lateinit var profileImage: CircleImageView
     private lateinit var sharedPref: android.content.SharedPreferences
 
-    // ✅ Launcher kamera
     private val cameraLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -49,7 +48,6 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
         }
     }
 
-    // ✅ Launcher galeri
     private val galleryLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -86,7 +84,6 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
         sharedPref = requireActivity().getSharedPreferences("user_session", Context.MODE_PRIVATE)
         profileImage = view.findViewById(R.id.profileImage)
 
-        // Setup row info profil
         val rowName     = view.findViewById<View>(R.id.rowName)
         val rowUsername = view.findViewById<View>(R.id.rowUsername)
         val rowEmail    = view.findViewById<View>(R.id.rowEmail)
@@ -105,7 +102,6 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
         tvEmailLabel.text    = "Email"
         tvEmail.text         = sharedPref.getString("email", "-")
 
-        // Long press untuk copy/edit
         rowName.setOnLongClickListener {
             showInfoContextMenu(it, "nama", tvName)
             true
@@ -119,10 +115,8 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
             true
         }
 
-        // Load foto tersimpan
         loadSavedImage()
 
-        // Tombol back ke dashboard
         view.findViewById<ImageView>(R.id.btnBack).setOnClickListener {
             requireActivity().supportFragmentManager.beginTransaction()
                 .replace(R.id.frameContainer, DashboardFragment())
@@ -132,12 +126,10 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
             ).selectedItemId = R.id.dashboard_menu
         }
 
-        // Edit foto
         view.findViewById<TextView>(R.id.tvEditPhoto).setOnClickListener {
             showImagePicker()
         }
 
-        // Ganti password
         view.findViewById<TextView>(R.id.menuPassword).setOnClickListener {
             requireActivity().supportFragmentManager.beginTransaction()
                 .replace(R.id.frameContainer, GantiPasswordFragment())
@@ -145,13 +137,11 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
                 .commit()
         }
 
-        // Logout
         view.findViewById<TextView>(R.id.menuLogout).setOnClickListener {
             showLogoutDialog()
         }
     }
 
-    // ✅ Simpan Bitmap sebagai Base64 ke SharedPreferences
     private fun saveBitmapAsBase64(bitmap: Bitmap) {
         try {
             val byteArrayOutputStream = ByteArrayOutputStream()
@@ -170,9 +160,7 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
         }
     }
 
-    // ✅ Load foto dari Base64
     private fun loadSavedImage() {
-        // Prioritas 1: Base64
         val base64String = sharedPref.getString("profile_image_base64", null)
         if (!base64String.isNullOrEmpty()) {
             try {
@@ -187,7 +175,6 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
             }
         }
 
-        // Prioritas 2: file internal (fallback)
         val filename = sharedPref.getString("profile_image_path", null)
         if (filename != null) {
             try {
@@ -203,7 +190,6 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
             }
         }
 
-        // Default
         profileImage.setImageResource(R.drawable.ic_person_24)
     }
 

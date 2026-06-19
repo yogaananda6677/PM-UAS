@@ -53,7 +53,6 @@ class DashboardFragment : Fragment(), View.OnClickListener {
     private var lng = 0.0
     private val arrayItemPos = ArrayList<OverlayItem>()
 
-    // ✅ AirLocation dijadikan nullable, diinisialisasi di onViewCreated
     private var airLocation: AirLocation? = null
 
     override fun onCreateView(
@@ -75,7 +74,6 @@ class DashboardFragment : Fragment(), View.OnClickListener {
         val nama = pref.getString("name", "User")
         b.tvGreetingName.text = "Halo, $nama"
 
-        // ✅ Inisialisasi AirLocation di sini
         airLocation = AirLocation(
             requireActivity(),
             object : AirLocation.Callback {
@@ -121,7 +119,6 @@ class DashboardFragment : Fragment(), View.OnClickListener {
         b.btnBuatPengaduan.setOnClickListener(this)
         b.btnRiwayatPengaduan.setOnClickListener(this)
 
-        // ✅ Tombol ambil lokasi — sesuaikan id dengan layout kamu
         b.btnLokasiSaya.setOnClickListener {
             Log.d("GPS", "Tombol lokasi ditekan, start AirLocation")
             Toast.makeText(requireContext(), "Mengambil lokasi...", Toast.LENGTH_SHORT).show()
@@ -143,7 +140,6 @@ class DashboardFragment : Fragment(), View.OnClickListener {
         map.setTileSource(TileSourceFactory.MAPNIK)
         map.setMultiTouchControls(true)
 
-        // Tampilkan peta ke lokasi rental dulu sebelum GPS didapat
         val rentalPoint = GeoPoint(rentalLat, rentalLon)
         map.controller.setZoom(16.0)
         map.controller.setCenter(rentalPoint)
@@ -189,7 +185,6 @@ class DashboardFragment : Fragment(), View.OnClickListener {
         me.enableMyLocation()
         map.overlays.add(1, me)
 
-        // ✅ Zoom ke lokasi USER (bukan rental) setelah GPS didapat
         val userPoint = GeoPoint(lat, lng)
         map.controller.setZoom(18.0)
         map.controller.animateTo(userPoint)
