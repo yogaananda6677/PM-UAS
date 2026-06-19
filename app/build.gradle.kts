@@ -40,7 +40,7 @@ android {
             buildConfigField(
                 "String",
                 "BASE_URL",
-                "\"${localProperties.getProperty("BASE_URL_DEBUG") ?: "http://192.168.48.231:8000/api/"}\""
+                "\"${localProperties.getProperty("BASE_URL_DEBUG") ?: "http://192.168.40.146:8000/api/"}\""
 
             )
         }
@@ -54,7 +54,7 @@ android {
             buildConfigField(
                 "String",
                 "BASE_URL",
-                "\"${localProperties.getProperty("BASE_URL_RELEASE") ?: "http://192.168.48.231:8000/api/"}\""
+                "\"${localProperties.getProperty("BASE_URL_RELEASE") ?: "http://192.168.40.146:8000/api/"}\""
             )
         }
     }

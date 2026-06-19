@@ -6,11 +6,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.view.View
+import android.widget.EditText
 import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,17 +21,21 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import ananda.yoga.projectuasmobile.LoginActivity
 import ananda.yoga.projectuasmobile.R
-import android.widget.PopupMenu
-import android.content.ClipboardManager
 import android.content.ClipData
-import android.widget.EditText
+import android.content.ClipboardManager
+import android.graphics.ImageDecoder
+import android.os.Build
+import android.provider.MediaStore
+import android.util.Base64
 import de.hdodenhof.circleimageview.CircleImageView
+import java.io.ByteArrayOutputStream
 
 class ProfilFragment : Fragment(R.layout.fragment_profil) {
 
     private lateinit var profileImage: CircleImageView
     private lateinit var sharedPref: android.content.SharedPreferences
 
+    // ✅ Launcher kamera
     private val cameraLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -37,9 +43,39 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
             val bitmap = result.data?.extras?.get("data") as? Bitmap
             if (bitmap != null) {
                 profileImage.setImageBitmap(bitmap)
-                // Simpan bitmap ke file internal lalu simpan path-nya
-                saveBitmapToFile(bitmap)
+                saveBitmapAsBase64(bitmap)
                 Toast.makeText(requireContext(), "Foto berhasil diambil", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // ✅ Launcher galeri
+    private val galleryLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val imageUri: Uri? = result.data?.data
+            if (imageUri != null) {
+                try {
+                    val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        ImageDecoder.decodeBitmap(
+                            ImageDecoder.createSource(
+                                requireContext().contentResolver, imageUri
+                            )
+                        )
+                    } else {
+                        @Suppress("DEPRECATION")
+                        MediaStore.Images.Media.getBitmap(
+                            requireContext().contentResolver, imageUri
+                        )
+                    }
+                    profileImage.setImageBitmap(bitmap)
+                    saveBitmapAsBase64(bitmap)
+                    Toast.makeText(requireContext(), "Foto berhasil dipilih", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(requireContext(), "Gagal memuat foto", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -50,53 +86,58 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
         sharedPref = requireActivity().getSharedPreferences("user_session", Context.MODE_PRIVATE)
         profileImage = view.findViewById(R.id.profileImage)
 
-        val rowName = view.findViewById<View>(R.id.rowName)
+        // Setup row info profil
+        val rowName     = view.findViewById<View>(R.id.rowName)
         val rowUsername = view.findViewById<View>(R.id.rowUsername)
-        val rowEmail = view.findViewById<View>(R.id.rowEmail)
+        val rowEmail    = view.findViewById<View>(R.id.rowEmail)
 
-        val tvNameLabel = rowName.findViewById<TextView>(R.id.tvLabel)
-        val tvName = rowName.findViewById<TextView>(R.id.tvValue)
-
+        val tvNameLabel     = rowName.findViewById<TextView>(R.id.tvLabel)
+        val tvName          = rowName.findViewById<TextView>(R.id.tvValue)
         val tvUsernameLabel = rowUsername.findViewById<TextView>(R.id.tvLabel)
-        val tvUsername = rowUsername.findViewById<TextView>(R.id.tvValue)
+        val tvUsername      = rowUsername.findViewById<TextView>(R.id.tvValue)
+        val tvEmailLabel    = rowEmail.findViewById<TextView>(R.id.tvLabel)
+        val tvEmail         = rowEmail.findViewById<TextView>(R.id.tvValue)
 
-        val tvEmailLabel = rowEmail.findViewById<TextView>(R.id.tvLabel)
-        val tvEmail = rowEmail.findViewById<TextView>(R.id.tvValue)
-
-        tvNameLabel.text = "Nama"
-        tvName.text = sharedPref.getString("nama", "-")
-
+        tvNameLabel.text     = "Nama"
+        tvName.text          = sharedPref.getString("nama", "-")
         tvUsernameLabel.text = "Username"
-        tvUsername.text = sharedPref.getString("username", "-")
+        tvUsername.text      = sharedPref.getString("username", "-")
+        tvEmailLabel.text    = "Email"
+        tvEmail.text         = sharedPref.getString("email", "-")
 
-        tvEmailLabel.text = "Email"
-        tvEmail.text = sharedPref.getString("email", "-")
-
+        // Long press untuk copy/edit
         rowName.setOnLongClickListener {
             showInfoContextMenu(it, "nama", tvName)
             true
         }
-
         rowUsername.setOnLongClickListener {
             showInfoContextMenu(it, "username", tvUsername)
             true
         }
-
         rowEmail.setOnLongClickListener {
             showInfoContextMenu(it, "email", tvEmail)
             true
         }
 
+        // Load foto tersimpan
         loadSavedImage()
 
+        // Tombol back ke dashboard
         view.findViewById<ImageView>(R.id.btnBack).setOnClickListener {
-            requireActivity().onBackPressedDispatcher.onBackPressed()
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.frameContainer, DashboardFragment())
+                .commit()
+            requireActivity().findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(
+                R.id.bottomNavigation
+            ).selectedItemId = R.id.dashboard_menu
         }
 
+        // Edit foto
         view.findViewById<TextView>(R.id.tvEditPhoto).setOnClickListener {
             showImagePicker()
         }
 
+        // Ganti password
         view.findViewById<TextView>(R.id.menuPassword).setOnClickListener {
             requireActivity().supportFragmentManager.beginTransaction()
                 .replace(R.id.frameContainer, GantiPasswordFragment())
@@ -104,9 +145,66 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
                 .commit()
         }
 
+        // Logout
         view.findViewById<TextView>(R.id.menuLogout).setOnClickListener {
             showLogoutDialog()
         }
+    }
+
+    // ✅ Simpan Bitmap sebagai Base64 ke SharedPreferences
+    private fun saveBitmapAsBase64(bitmap: Bitmap) {
+        try {
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 70, byteArrayOutputStream)
+            val byteArray = byteArrayOutputStream.toByteArray()
+            val base64String = Base64.encodeToString(byteArray, Base64.DEFAULT)
+
+            sharedPref.edit()
+                .putString("profile_image_base64", base64String)
+                .remove("profile_image_path")
+                .remove("profile_image_uri")
+                .apply()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(requireContext(), "Gagal menyimpan foto", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // ✅ Load foto dari Base64
+    private fun loadSavedImage() {
+        // Prioritas 1: Base64
+        val base64String = sharedPref.getString("profile_image_base64", null)
+        if (!base64String.isNullOrEmpty()) {
+            try {
+                val byteArray = Base64.decode(base64String, Base64.DEFAULT)
+                val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+                if (bitmap != null) {
+                    profileImage.setImageBitmap(bitmap)
+                    return
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        // Prioritas 2: file internal (fallback)
+        val filename = sharedPref.getString("profile_image_path", null)
+        if (filename != null) {
+            try {
+                requireContext().openFileInput(filename).use { fis ->
+                    val bitmap = BitmapFactory.decodeStream(fis)
+                    if (bitmap != null) {
+                        profileImage.setImageBitmap(bitmap)
+                        return
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        // Default
+        profileImage.setImageResource(R.drawable.ic_person_24)
     }
 
     private fun showImagePicker() {
@@ -118,6 +216,7 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
                     1 -> checkGalleryPermission()
                     2 -> {
                         sharedPref.edit()
+                            .remove("profile_image_base64")
                             .remove("profile_image_path")
                             .remove("profile_image_uri")
                             .apply()
@@ -127,11 +226,10 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
                 }
             }.show()
     }
+
     private fun checkCameraPermission() {
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.CAMERA
-            ) != PackageManager.PERMISSION_GRANTED
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+            != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
                 requireActivity(),
@@ -142,13 +240,13 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
             openCamera()
         }
     }
+
     private fun checkGalleryPermission() {
-        val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             Manifest.permission.READ_MEDIA_IMAGES
         } else {
             Manifest.permission.READ_EXTERNAL_STORAGE
         }
-
         if (ContextCompat.checkSelfPermission(requireContext(), permission)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -158,105 +256,41 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
         }
     }
 
-    private fun openGallery() {
-        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        galleryLauncher.launch(intent)
-    }
     private fun openCamera() {
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
         cameraLauncher.launch(intent)
     }
 
-    private val galleryLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val imageUri: Uri? = result.data?.data
-            if (imageUri != null) {
-                profileImage.setImageURI(imageUri)
-                sharedPref.edit().putString("profile_image_uri", imageUri.toString()).apply()
-                Toast.makeText(requireContext(), "Foto berhasil dipilih", Toast.LENGTH_SHORT).show()
-            }
-        }
+    private fun openGallery() {
+        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        galleryLauncher.launch(intent)
     }
 
-    private fun saveBitmapToFile(bitmap: Bitmap) {
-        try {
-            val filename = "profile_photo.jpg"
-            requireContext().openFileOutput(filename, Context.MODE_PRIVATE).use { fos ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos)
-            }
-            sharedPref.edit().putString("profile_image_path", filename).apply()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun loadSavedImage() {
-        val savedUri = sharedPref.getString("profile_image_uri", null)
-        if (savedUri != null) {
-            profileImage.setImageURI(Uri.parse(savedUri))
-            return
-        }
-
-        val filename = sharedPref.getString("profile_image_path", null)
-        if (filename != null) {
-            try {
-                requireContext().openFileInput(filename).use { fis ->
-                    val bitmap = android.graphics.BitmapFactory.decodeStream(fis)
-                    profileImage.setImageBitmap(bitmap)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-
-    private fun showInfoContextMenu(
-        anchor: View,
-        key: String,
-        textView: TextView
-    ) {
+    private fun showInfoContextMenu(anchor: View, key: String, textView: TextView) {
         val popup = PopupMenu(requireContext(), anchor)
         popup.menuInflater.inflate(R.menu.menu_profile_info, popup.menu)
-
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-
                 R.id.menu_copy -> {
                     val clipboard = requireContext()
                         .getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-                    val clip = ClipData.newPlainText(
-                        key,
-                        textView.text.toString()
+                    clipboard.setPrimaryClip(
+                        ClipData.newPlainText(key, textView.text.toString())
                     )
-
-                    clipboard.setPrimaryClip(clip)
-
-                    Toast.makeText(
-                        requireContext(),
-                        "Berhasil dicopy",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "Berhasil dicopy", Toast.LENGTH_SHORT).show()
                     true
                 }
-
                 R.id.menu_edit -> {
                     showEditDialog(key, textView)
                     true
                 }
-
                 else -> false
             }
         }
-
         popup.show()
     }
-    private fun showEditDialog(
-        key: String,
-        textView: TextView
-    ) {
+
+    private fun showEditDialog(key: String, textView: TextView) {
         val editText = EditText(requireContext())
         editText.setText(textView.text.toString())
         editText.setSelection(editText.text.length)
@@ -266,21 +300,16 @@ class ProfilFragment : Fragment(R.layout.fragment_profil) {
             .setView(editText)
             .setPositiveButton("Simpan") { _, _ ->
                 val newValue = editText.text.toString().trim()
-
                 if (newValue.isNotEmpty()) {
                     sharedPref.edit().putString(key, newValue).apply()
                     textView.text = newValue
-
-                    Toast.makeText(
-                        requireContext(),
-                        "Data berhasil diubah",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "Data berhasil diubah", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Batal", null)
             .show()
     }
+
     private fun showLogoutDialog() {
         AlertDialog.Builder(requireContext())
             .setTitle("Logout")

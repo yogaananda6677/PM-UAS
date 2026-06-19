@@ -399,7 +399,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
-            android:text="LOKASI PS TERDEKAT"
+            android:text="LOKASI PS"
             android:textColor="#888780"
             android:textSize="12sp"
             android:textStyle="bold"
@@ -408,13 +408,19 @@
         <!-- Jarak -->
         <TextView
             android:id="@+id/tvJarak"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:textSize="14sp"
+            android:visibility="gone"
+            android:text="" />
+
+        <!-- Tombol ambil lokasi GPS -->
+        <Button
+            android:id="@+id/btnLokasiSaya"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="4dp"
-            android:text="Menghitung jarak..."
-            android:textColor="#185FA5"
-            android:textSize="13sp"/>
+            android:text="📍 Lokasi Saya" />
 
         <!-- OpenStreetMap -->
         <org.osmdroid.views.MapView

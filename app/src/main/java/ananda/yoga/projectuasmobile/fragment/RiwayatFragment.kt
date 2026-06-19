@@ -110,32 +110,52 @@ class RiwayatFragment : Fragment() {
 
         val token = SettingsHelper.getToken(requireContext())
 
-        // Buat URL dengan query param kalau ada filter
+        // ✅ Cek token kosong atau tidak
+        if (token.isEmpty()) {
+            tvJumlahRiwayat.text = "Token kosong, silakan login ulang"
+            return
+        }
+
         var url = ApiConfig.RIWAYAT_PEMESANAN
         if (tanggalMulai.isNotEmpty() && tanggalSelesai.isNotEmpty()) {
             url += "?tanggal_mulai=$tanggalMulai&tanggal_selesai=$tanggalSelesai"
         }
 
+        android.util.Log.d("RIWAYAT", "URL: $url")
+        android.util.Log.d("RIWAYAT", "Token: $token")
+
         val request = object : JsonObjectRequest(
             Method.GET, url, null,
             { response ->
-                val success = response.optBoolean("success", false)
-                if (success) {
-                    val data = response.optJSONArray("data") ?: JSONArray()
+                android.util.Log.d("RIWAYAT", "Response: $response")
+
+                // ✅ Langsung ambil "data" tanpa cek "success"
+                val data = response.optJSONArray("data")
+                if (data != null && data.length() > 0) {
                     tampilkanRiwayat(data)
                 } else {
-                    tvJumlahRiwayat.text = "Tidak ada data"
+                    tvJumlahRiwayat.text = "Belum ada riwayat pemesanan"
                 }
             },
             { error ->
-                tvJumlahRiwayat.text = "Gagal memuat data"
-                Toast.makeText(requireContext(), "Gagal terhubung ke server", Toast.LENGTH_SHORT).show()
+                // ✅ Log detail error
+                val statusCode = error.networkResponse?.statusCode
+                val errorBody = error.networkResponse?.data?.let { String(it) }
+                android.util.Log.e("RIWAYAT", "Error code: $statusCode")
+                android.util.Log.e("RIWAYAT", "Error body: $errorBody")
+
+                tvJumlahRiwayat.text = "Gagal memuat (kode: $statusCode)"
+                Toast.makeText(
+                    requireContext(),
+                    "Error $statusCode: $errorBody",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         ) {
             override fun getHeaders(): MutableMap<String, String> {
                 return hashMapOf(
-                    "Accept"        to "application/json",
-                    "Content-Type"  to "application/json",
+                    "Accept" to "application/json",
+                    "Content-Type" to "application/json",
                     "Authorization" to "Bearer $token"
                 )
             }
@@ -143,7 +163,6 @@ class RiwayatFragment : Fragment() {
 
         Volley.newRequestQueue(requireContext()).add(request)
     }
-
     private fun tampilkanRiwayat(data: JSONArray) {
         val list = ArrayList<RiwayatItem>()
 

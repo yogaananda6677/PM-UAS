@@ -4,7 +4,10 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Bundle
+import android.preference.PreferenceManager
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,7 +23,19 @@ import ananda.yoga.projectuasmobile.databinding.FragmentDashboardBinding
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
+import mumayank.com.airlocationlibrary.AirLocation
 import org.json.JSONArray
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.ItemizedIconOverlay
+import org.osmdroid.views.overlay.ItemizedIconOverlay.OnItemGestureListener
+import org.osmdroid.views.overlay.OverlayItem
+import org.osmdroid.views.overlay.compass.CompassOverlay
+import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
 class DashboardFragment : Fragment(), View.OnClickListener {
 
@@ -29,6 +44,17 @@ class DashboardFragment : Fragment(), View.OnClickListener {
 
     private lateinit var token: String
     private lateinit var idUser: String
+    private lateinit var map: MapView
+
+    private val rentalLat = -7.9243442
+    private val rentalLon = 112.1322567
+
+    private var lat = 0.0
+    private var lng = 0.0
+    private val arrayItemPos = ArrayList<OverlayItem>()
+
+    // ✅ AirLocation dijadikan nullable, diinisialisasi di onViewCreated
+    private var airLocation: AirLocation? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,25 +72,160 @@ class DashboardFragment : Fragment(), View.OnClickListener {
         token = pref.getString("token", "") ?: ""
         idUser = pref.getString("id_user", "") ?: ""
 
-        // Tampilkan nama user
         val nama = pref.getString("name", "User")
-        b.tvGreetingName.text = nama
+        b.tvGreetingName.text = "Halo, $nama"
 
-        // Setup tombol
+        // ✅ Inisialisasi AirLocation di sini
+        airLocation = AirLocation(
+            requireActivity(),
+            object : AirLocation.Callback {
+
+                override fun onFailure(locationFailedEnum: AirLocation.LocationFailedEnum) {
+                    Log.e("GPS", "Gagal: $locationFailedEnum")
+
+                }
+
+                override fun onSuccess(locations: ArrayList<Location>) {
+                    lat = locations[0].latitude
+                    lng = locations[0].longitude
+
+                    Log.d("GPS", "Berhasil: lat=$lat, lng=$lng")
+
+                    val lokasiRental = Location("rental").apply {
+                        latitude = rentalLat
+                        longitude = rentalLon
+                    }
+                    val lokasiUser = Location("user").apply {
+                        latitude = lat
+                        longitude = lng
+                    }
+
+                    val jarakMeter = lokasiUser.distanceTo(lokasiRental)
+                    val jarakText = if (jarakMeter >= 1000) {
+                        String.format("%.2f km", jarakMeter / 1000)
+                    } else {
+                        String.format("%.0f meter", jarakMeter)
+                    }
+
+                    if (_b != null) {
+                        b.tvJarak.visibility = View.VISIBLE
+                        b.tvJarak.text = "📍 Lat: $lat\n📍 Lng: $lng\n📏 Jarak ke Rental: $jarakText"
+                    }
+
+                    drawMap()
+                }
+            },
+            isLocationRequiredOnlyOneTime = false
+        )
+
         b.btnBuatPengaduan.setOnClickListener(this)
         b.btnRiwayatPengaduan.setOnClickListener(this)
 
-        // Ambil data statistik dan pengaduan terbaru
+        // ✅ Tombol ambil lokasi — sesuaikan id dengan layout kamu
+        b.btnLokasiSaya.setOnClickListener {
+            Log.d("GPS", "Tombol lokasi ditekan, start AirLocation")
+            Toast.makeText(requireContext(), "Mengambil lokasi...", Toast.LENGTH_SHORT).show()
+            airLocation?.start()
+        }
+
         getStatistikPengaduan()
         getAktivitasTerbaru()
+        setupMap()
+    }
+
+    private fun setupMap() {
+        Configuration.getInstance().load(
+            requireContext(),
+            PreferenceManager.getDefaultSharedPreferences(requireContext())
+        )
+
+        map = b.mapView
+        map.setTileSource(TileSourceFactory.MAPNIK)
+        map.setMultiTouchControls(true)
+
+        // Tampilkan peta ke lokasi rental dulu sebelum GPS didapat
+        val rentalPoint = GeoPoint(rentalLat, rentalLon)
+        map.controller.setZoom(16.0)
+        map.controller.setCenter(rentalPoint)
+
+        arrayItemPos.add(
+            OverlayItem("Infinity PlayStation", "Lokasi Rental PS", GeoPoint(rentalLat, rentalLon))
+        )
+
+        map.overlays.add(
+            ItemizedIconOverlay(
+                arrayItemPos,
+                object : OnItemGestureListener<OverlayItem> {
+                    override fun onItemSingleTapUp(index: Int, item: OverlayItem): Boolean {
+                        Toast.makeText(requireContext(), item.title, Toast.LENGTH_SHORT).show()
+                        return true
+                    }
+                    override fun onItemLongPress(index: Int, item: OverlayItem): Boolean {
+                        Toast.makeText(requireContext(), item.snippet, Toast.LENGTH_SHORT).show()
+                        return true
+                    }
+                },
+                requireContext()
+            )
+        )
+
+        map.invalidate()
+    }
+
+    private fun drawMap() {
+        if (!::map.isInitialized) return
+
+        val compass = CompassOverlay(
+            requireContext(),
+            InternalCompassOrientationProvider(requireContext()),
+            map
+        )
+        compass.enableCompass()
+        map.overlays.clear()
+        map.overlays.add(0, compass)
+
+        val gps = GpsMyLocationProvider(requireContext())
+        val me = MyLocationNewOverlay(gps, map)
+        me.enableMyLocation()
+        map.overlays.add(1, me)
+
+        // ✅ Zoom ke lokasi USER (bukan rental) setelah GPS didapat
+        val userPoint = GeoPoint(lat, lng)
+        map.controller.setZoom(18.0)
+        map.controller.animateTo(userPoint)
+
+        // Tambah kembali marker rental
+        arrayItemPos.clear()
+        arrayItemPos.add(
+            OverlayItem("Infinity PlayStation", "Lokasi Rental PS", GeoPoint(rentalLat, rentalLon))
+        )
+
+        map.overlays.add(
+            ItemizedIconOverlay(
+                arrayItemPos,
+                object : OnItemGestureListener<OverlayItem> {
+                    override fun onItemSingleTapUp(index: Int, item: OverlayItem): Boolean {
+                        Toast.makeText(requireContext(), item.title, Toast.LENGTH_SHORT).show()
+                        return true
+                    }
+                    override fun onItemLongPress(index: Int, item: OverlayItem): Boolean {
+                        Toast.makeText(requireContext(), item.snippet, Toast.LENGTH_SHORT).show()
+                        return true
+                    }
+                },
+                requireContext()
+            )
+        )
+
+        map.invalidate()
     }
 
     override fun onClick(v: View?) {
         when (v?.id) {
             R.id.btnBuatPengaduan -> {
-                // Cek permission kamera
                 if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
-                    != PackageManager.PERMISSION_GRANTED) {
+                    != PackageManager.PERMISSION_GRANTED
+                ) {
                     ActivityCompat.requestPermissions(
                         requireActivity(),
                         arrayOf(Manifest.permission.CAMERA),
@@ -86,6 +247,8 @@ class DashboardFragment : Fragment(), View.OnClickListener {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        airLocation?.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startActivity(Intent(requireContext(), PengaduanActivity::class.java))
@@ -95,109 +258,112 @@ class DashboardFragment : Fragment(), View.OnClickListener {
         }
     }
 
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        airLocation?.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::map.isInitialized) map.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (::map.isInitialized) map.onPause()
+    }
+
     private fun getStatistikPengaduan() {
         if (token.isEmpty()) return
-
         val request = object : JsonObjectRequest(
-            Request.Method.GET,
-            ApiConfig.RIWAYAT_PENGADUAN,
-            null,
+            Request.Method.GET, ApiConfig.RIWAYAT_PENGADUAN, null,
             { response ->
-                val dataArray = response.optJSONArray("data") ?: JSONArray()
-                var total = 0
-                var pending = 0
-                var proses = 0
-                var selesai = 0
-                var dibatalkan = 0
-
-                for (i in 0 until dataArray.length()) {
-                    val obj = dataArray.getJSONObject(i)
-                    val status = obj.optString("status_pengaduan", "pending")
-                    total++
-                    when (status.lowercase()) {
-                        "pending" -> pending++
-                        "proses" -> proses++
-                        "selesai" -> selesai++
-                        "dibatalkan" -> dibatalkan++
+                if (_b != null && isAdded) {
+                    val dataArray = response.optJSONArray("data") ?: JSONArray()
+                    var total = 0; var pending = 0; var proses = 0; var selesai = 0
+                    for (i in 0 until dataArray.length()) {
+                        val obj = dataArray.getJSONObject(i)
+                        total++
+                        when (obj.optString("status_pengaduan", "pending").lowercase()) {
+                            "pending" -> pending++
+                            "proses" -> proses++
+                            "selesai" -> selesai++
+                        }
                     }
+                    b.tvStatPengaduanTotal.text = total.toString()
+                    b.tvStatPengaduanPending.text = pending.toString()
+                    b.tvStatPengaduanProses.text = proses.toString()
+                    b.tvStatPengaduanSelesai.text = selesai.toString()
+                    b.cardStatPengaduan.visibility = View.VISIBLE
                 }
-
-                // Tampilkan statistik
-                b.tvStatPengaduanTotal.text = total.toString()
-                b.tvStatPengaduanPending.text = pending.toString()
-                b.tvStatPengaduanProses.text = proses.toString()
-                b.tvStatPengaduanSelesai.text = selesai.toString()
-
-                // Sembunyikan loading atau tampilkan card
-                b.cardStatPengaduan.visibility = View.VISIBLE
             },
-            { error ->
-                Toast.makeText(requireContext(), "Gagal ambil statistik pengaduan", Toast.LENGTH_SHORT).show()
+            { _ ->
+                if (_b != null && isAdded) {
+                    Toast.makeText(requireContext(), "Gagal ambil statistik", Toast.LENGTH_SHORT).show()
+                }
             }
         ) {
-            override fun getHeaders(): MutableMap<String, String> {
-                return hashMapOf(
-                    "Authorization" to "Bearer $token",
-                    "Accept" to "application/json"
-                )
-            }
+            override fun getHeaders() = hashMapOf(
+                "Authorization" to "Bearer $token",
+                "Accept" to "application/json"
+            )
         }
-
         Volley.newRequestQueue(requireContext()).add(request)
     }
 
     private fun getAktivitasTerbaru() {
-        // Untuk demo, bisa tampilkan beberapa aktivitas dari riwayat pemesanan atau pengaduan
-        // Bisa diambil dari API riwayat pemesanan, atau gabungan
-        // Untuk sederhana, kita ambil dari riwayat pengaduan (3 data terakhir)
-        // Di sini kita bisa panggil RIWAYAT_PENGADUAN lagi dan tampilkan di ListView
-        // Tapi karena sudah dipanggil di getStatistikPengaduan, kita bisa reuse atau panggil terpisah
-        // Saya panggil terpisah untuk menjaga modularitas
         if (token.isEmpty()) return
-
         val request = object : JsonObjectRequest(
-            Request.Method.GET,
-            ApiConfig.RIWAYAT_PENGADUAN,
-            null,
+            Request.Method.GET, ApiConfig.RIWAYAT_PEMESANAN, null,
             { response ->
-                val dataArray = response.optJSONArray("data") ?: JSONArray()
-                val items = mutableListOf<String>()
-                val max = minOf(3, dataArray.length())
-                for (i in 0 until max) {
-                    val obj = dataArray.getJSONObject(i)
-                    val judul = obj.optString("judul_pengaduan", "Pengaduan")
-                    val status = obj.optString("status_pengaduan", "pending")
-                    items.add("$judul - Status: $status")
-                }
+                if (_b != null && isAdded) {
+                    val dataArray = response.optJSONArray("data") ?: JSONArray()
+                    val items = mutableListOf<String>()
 
-                // Tampilkan di ListView lvAktivitas (sudah ada di layout)
-                val adapter = android.widget.ArrayAdapter(
-                    requireContext(),
-                    android.R.layout.simple_list_item_1,
-                    items
-                )
-                b.lvAktivitas.adapter = adapter
+                    for (i in 0 until minOf(3, dataArray.length())) {
+                        val obj = dataArray.getJSONObject(i)
+                        val detailSewa = obj.optJSONArray("detail_sewa")
+                        val sewa = detailSewa?.optJSONObject(0)
+                        val namaPS = sewa?.optString("tipe_ps", "PS") ?: "PS"
+                        val nomorPS = sewa?.optJSONObject("playstation")
+                            ?.optString("nomor_ps", "") ?: ""
+                        val status = obj.optString("status_transaksi", "-")
+                        val totalHarga = obj.optDouble("total_harga", 0.0).toLong()
+                        val formatRupiah = java.text.NumberFormat
+                            .getCurrencyInstance(java.util.Locale("id", "ID"))
+                        val statusLabel = when (status.lowercase()) {
+                            "selesai" -> "✅ Selesai"
+                            "waiting" -> "⏳ Menunggu"
+                            "aktif"   -> "🎮 Aktif"
+                            "batal"   -> "❌ Batal"
+                            else      -> status
+                        }
+                        items.add("$namaPS $nomorPS | $statusLabel | ${formatRupiah.format(totalHarga)}")
+                    }
+
+                    if (items.isEmpty()) items.add("Belum ada transaksi")
+
+                    b.lvAktivitas.adapter = android.widget.ArrayAdapter(
+                        requireContext(), android.R.layout.simple_list_item_1, items
+                    )
+                }
             },
-            { error ->
-                // Silent fail
-            }
+            { _ -> }
         ) {
-            override fun getHeaders(): MutableMap<String, String> {
-                return hashMapOf(
-                    "Authorization" to "Bearer $token",
-                    "Accept" to "application/json"
-                )
-            }
+            override fun getHeaders() = hashMapOf(
+                "Authorization" to "Bearer $token",
+                "Accept" to "application/json"
+            )
         }
         Volley.newRequestQueue(requireContext()).add(request)
+    }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _b = null
     }
 
     companion object {
         private const val REQUEST_CAMERA_PERMISSION = 1001
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _b = null
     }
 }
