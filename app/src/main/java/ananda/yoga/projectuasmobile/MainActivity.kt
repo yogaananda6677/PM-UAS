@@ -34,14 +34,11 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        // ✅ Pakai topToolbar sesuai id di XML
         setSupportActionBar(b.topToolbar)
         supportActionBar?.title = "InfinityPS"
 
-        // Fragment pertama
         replaceFragment(DashboardFragment())
 
-        // Bottom Navigation
         b.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.dashboard_menu -> {
@@ -69,13 +66,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ Inflate menu ke Toolbar
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
         return true
     }
 
-    // ✅ Handle klik item menu
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.menuProfil -> {
