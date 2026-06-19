@@ -71,8 +71,9 @@ class DashboardFragment : Fragment(), View.OnClickListener {
         token = pref.getString("token", "") ?: ""
         idUser = pref.getString("id_user", "") ?: ""
 
-        val nama = pref.getString("name", "User")
-        b.tvGreetingName.text = "Halo, $nama"
+        val name = pref.getString("nama", "User")
+        b.tvGreetingName.text = "Hai, $name"
+
 
         airLocation = AirLocation(
             requireActivity(),

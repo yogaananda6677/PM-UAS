@@ -31,7 +31,6 @@ object SettingsHelper {
         applyTema(context)
     }
 
-    // ========== SESI LOGIN ==========
     fun saveSession(
         context: Context,
         token: String,

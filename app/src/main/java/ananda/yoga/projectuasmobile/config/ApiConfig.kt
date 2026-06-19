@@ -8,16 +8,13 @@ object ApiConfig {
     val BASE_URL: String = BuildConfig.BASE_URL
     val STORAGE_URL = BASE_URL + "storage"
 
-    // AUTH
     val LOGIN = BASE_URL + "login"
     val REGISTER = BASE_URL + "register"
 
-    // PLAYSTATION
     val GET_PS = BASE_URL + "playstation"
     val GET_PS_TERSEDIA = BASE_URL + "playstation"
     val GET_MONITORING = BASE_URL + "monitoring/pelanggan"
 
-    // PRODUK
     val GET_PRODUK = BASE_URL + "produk"
 
     // TRANSAKSI
@@ -28,13 +25,11 @@ object ApiConfig {
     fun TAMBAH_WAKTU(id: String) = BASE_URL + "transaksi/$id/tambah-waktu"
     fun TAMBAH_PRODUK(id: String) = BASE_URL + "transaksi/$id/tambah-produk"
 
-    // PENGADUAN
     val CREATE_PENGADUAN = BASE_URL + "pengaduan"
     val RIWAYAT_PENGADUAN = BASE_URL + "pengaduan"
     fun DETAIL_PENGADUAN(id: String) = BASE_URL + "pengaduan/$id"
     fun CANCEL_PENGADUAN(id: String) = BASE_URL + "pengaduan/$id/cancel"
 
-    // USER
     val UPDATE_PASSWORD = BASE_URL + "user/password"
 
     // ==================== TRANSAKSI ====================
