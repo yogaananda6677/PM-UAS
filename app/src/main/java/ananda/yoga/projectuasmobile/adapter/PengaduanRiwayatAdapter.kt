@@ -8,9 +8,11 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import ananda.yoga.projectuasmobile.R
+import ananda.yoga.projectuasmobile.config.ApiConfig
 import ananda.yoga.projectuasmobile.model.Pengaduan
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestOptions
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -55,24 +57,30 @@ class PengaduanRiwayatAdapter(
                 tvVideoIndicator.visibility = View.GONE
             } else {
                 ivBukti.visibility = View.VISIBLE
-                val fullUrl = "http://192.168.20.226:8000/storage/$buktiUrl"
-                val isVideo = buktiUrl.endsWith(".mp4") || buktiUrl.endsWith(".mov") || buktiUrl.endsWith(".3gp")
+                // Gunakan base URL dari ApiConfig
+                val fullUrl = ApiConfig.BASE_URL + "storage/" + buktiUrl
+
+                val isVideo = buktiUrl.endsWith(".mp4") ||
+                        buktiUrl.endsWith(".mov") ||
+                        buktiUrl.endsWith(".3gp")
 
                 if (isVideo) {
                     tvVideoIndicator.visibility = View.VISIBLE
                     Glide.with(context)
                         .load(fullUrl)
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .placeholder(android.R.drawable.ic_media_play)
-                        .error(android.R.drawable.ic_media_play)
+                        .apply(RequestOptions()
+                            .placeholder(android.R.drawable.ic_media_play)
+                            .error(android.R.drawable.ic_media_play)
+                            .diskCacheStrategy(DiskCacheStrategy.ALL))
                         .into(ivBukti)
                 } else {
                     tvVideoIndicator.visibility = View.GONE
                     Glide.with(context)
                         .load(fullUrl)
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .placeholder(android.R.drawable.ic_menu_gallery)
-                        .error(android.R.drawable.ic_menu_gallery)
+                        .apply(RequestOptions()
+                            .placeholder(android.R.drawable.ic_menu_gallery)
+                            .error(android.R.drawable.ic_menu_gallery)
+                            .diskCacheStrategy(DiskCacheStrategy.ALL))
                         .into(ivBukti)
                 }
             }

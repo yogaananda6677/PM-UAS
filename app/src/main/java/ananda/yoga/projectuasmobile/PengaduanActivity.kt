@@ -2,7 +2,6 @@ package ananda.yoga.projectuasmobile
 
 import android.Manifest
 import android.app.AlertDialog
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -30,7 +29,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
-import java.io.InputStream
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,14 +40,14 @@ class PengaduanActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var token: String
 
     private var selectedFile: File? = null
-    private var isVideo = false
+    private var currentPhotoPath: String? = null
 
     companion object {
         private const val REQUEST_IMAGE_CAPTURE = 100
         private const val REQUEST_GALLERY = 101
         private const val REQUEST_PERMISSION_CAMERA = 102
         private const val REQUEST_PERMISSION_STORAGE = 103
-        private const val TAG = "PengaduanActivity"
+        private const val TAG = "Pengaduan"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,6 +57,10 @@ class PengaduanActivity : AppCompatActivity(), View.OnClickListener {
 
         val pref = getSharedPreferences("user_session", Context.MODE_PRIVATE)
         token = pref.getString("token", "") ?: ""
+
+        if (token.isEmpty()) {
+            Log.e(TAG, "Token kosong! User belum login / sesi habis.")
+        }
 
         setupKategoriSpinner()
         setupTombol()
@@ -89,7 +92,8 @@ class PengaduanActivity : AppCompatActivity(), View.OnClickListener {
         when (v?.id) {
             R.id.btnAmbilFoto -> {
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                    != PackageManager.PERMISSION_GRANTED) {
+                    != PackageManager.PERMISSION_GRANTED
+                ) {
                     ActivityCompat.requestPermissions(
                         this,
                         arrayOf(Manifest.permission.CAMERA),
@@ -101,7 +105,6 @@ class PengaduanActivity : AppCompatActivity(), View.OnClickListener {
             }
             R.id.btnHapusFoto -> {
                 selectedFile = null
-                isVideo = false
                 b.ivFotoBukti.setImageDrawable(null)
                 b.ivFotoBukti.visibility = View.GONE
                 b.btnHapusFoto.visibility = View.GONE
@@ -128,18 +131,32 @@ class PengaduanActivity : AppCompatActivity(), View.OnClickListener {
 
     // ==================== KAMERA ====================
     private fun ambilFotoDariKamera() {
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        val photoFile = createImageFile()
-        if (photoFile != null) {
-            val photoURI = FileProvider.getUriForFile(
-                this,
-                "${applicationContext.packageName}.fileprovider",
-                photoFile
-            )
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
-            startActivityForResult(intent, REQUEST_IMAGE_CAPTURE)
-        } else {
-            Toast.makeText(this, "Gagal membuat file gambar", Toast.LENGTH_SHORT).show()
+        try {
+            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+
+            // Pastikan ada aplikasi kamera yang bisa menangani intent ini
+            if (intent.resolveActivity(packageManager) == null) {
+                Toast.makeText(this, "Tidak ada aplikasi kamera ditemukan", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            val photoFile = createImageFile()
+            if (photoFile != null) {
+                val photoURI = FileProvider.getUriForFile(
+                    this,
+                    "${applicationContext.packageName}.fileprovider",
+                    photoFile
+                )
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+                // Beri izin tulis sementara ke aplikasi kamera pihak ketiga
+                intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                startActivityForResult(intent, REQUEST_IMAGE_CAPTURE)
+            } else {
+                Toast.makeText(this, "Gagal membuat file gambar", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "ambilFotoDariKamera error", e)
+            Toast.makeText(this, "Error kamera: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -151,135 +168,141 @@ class PengaduanActivity : AppCompatActivity(), View.OnClickListener {
                 "JPEG_${timeStamp}_",
                 ".jpg",
                 storageDir
-            )
+            ).apply {
+                currentPhotoPath = absolutePath
+            }
         } catch (e: Exception) {
+            Log.e(TAG, "createImageFile error", e)
             null
         }
     }
 
     // ==================== GALERI ====================
     private fun ambilDariGaleri() {
-        val intent = Intent(Intent.ACTION_PICK).apply {
-            type = "*/*"
-            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
-                "image/*",
-                "video/mp4", "video/mov", "video/3gp"
-            ))
-        }
+        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
         startActivityForResult(intent, REQUEST_GALLERY)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == RESULT_OK) {
-            when (requestCode) {
-                REQUEST_IMAGE_CAPTURE -> {
-                    // Ambil dari file yang dibuat sebelumnya (createImageFile)
-                    val file = File(cacheDir, "temp_kamera_${System.currentTimeMillis()}.jpg")
-                    // Kita perlu ambil file dari kamera: biasanya tersimpan di external files dir
-                    // Karena kita pakai FileProvider, kita cari file terakhir di external files
-                    val externalFilesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-                    val files = externalFilesDir?.listFiles()?.sortedByDescending { it.lastModified() }
-                    val latestFile = files?.firstOrNull { it.extension == "jpg" || it.extension == "jpeg" }
-                    if (latestFile != null && latestFile.exists()) {
-                        // Kompres dan salin ke cache
-                        val compressed = compressImageToCache(latestFile)
-                        if (compressed != null) {
-                            selectedFile = compressed
-                            isVideo = false
-                            tampilkanPreview(compressed)
-                        } else {
-                            Toast.makeText(this, "Gagal mengompres gambar", Toast.LENGTH_SHORT).show()
-                        }
-                    } else {
-                        Toast.makeText(this, "Gagal mengambil gambar dari kamera", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                REQUEST_GALLERY -> {
-                    data?.data?.let { uri ->
-                        val mimeType = contentResolver.getType(uri)
-                        isVideo = mimeType?.startsWith("video/") == true
 
-                        if (isVideo) {
-                            // Video: salin ke cache
-                            val file = copyUriToCache(uri)
-                            if (file != null) {
-                                selectedFile = file
-                                tampilkanPreview(file)
-                            } else {
-                                Toast.makeText(this, "Gagal mengambil video", Toast.LENGTH_SHORT).show()
-                            }
-                        } else {
-                            // Gambar: kompres
-                            val bitmap = getBitmapFromUri(uri)
-                            if (bitmap != null) {
-                                val compressed = compressBitmapToCache(bitmap)
-                                if (compressed != null) {
-                                    selectedFile = compressed
-                                    isVideo = false
-                                    tampilkanPreview(compressed)
-                                } else {
-                                    Toast.makeText(this, "Gagal mengompres gambar", Toast.LENGTH_SHORT).show()
-                                }
-                            } else {
-                                Toast.makeText(this, "Gagal membaca gambar", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }
-                }
-            }
+        Log.d(TAG, "onActivityResult: requestCode=$requestCode, resultCode=$resultCode")
+
+        if (resultCode != RESULT_OK) {
+            Log.d(TAG, "Result bukan RESULT_OK, dibatalkan oleh user atau gagal.")
+            return
+        }
+
+        when (requestCode) {
+            REQUEST_IMAGE_CAPTURE -> handleKameraResult()
+            REQUEST_GALLERY -> handleGaleriResult(data)
         }
     }
 
-    private fun getBitmapFromUri(uri: Uri): Bitmap? {
-        return try {
-            contentResolver.openInputStream(uri)?.use { input ->
-                BitmapFactory.decodeStream(input)
+    private fun handleKameraResult() {
+        try {
+            val path = currentPhotoPath
+            if (path.isNullOrEmpty()) {
+                Log.e(TAG, "currentPhotoPath null/kosong")
+                Toast.makeText(this, "Gagal: path foto tidak ditemukan", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            val file = File(path)
+            Log.d(TAG, "Kamera file: ${file.absolutePath}, exists=${file.exists()}, size=${file.length()}")
+
+            if (!file.exists() || file.length() <= 0) {
+                Toast.makeText(this, "File foto dari kamera kosong/tidak ditemukan", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            val compressed = compressImage(file)
+            if (compressed != null) {
+                selectedFile = compressed
+                tampilkanPreview(compressed)
+            } else {
+                Toast.makeText(this, "Gagal kompres gambar dari kamera", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
+            Log.e(TAG, "handleKameraResult error", e)
+            Toast.makeText(this, "Error memproses foto kamera: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun handleGaleriResult(data: Intent?) {
+        try {
+            val uri = data?.data
+            if (uri == null) {
+                Toast.makeText(this, "Tidak ada gambar dipilih", Toast.LENGTH_SHORT).show()
+                return
+            }
+            Log.d(TAG, "Gallery URI: $uri")
+
+            val file = getFileFromUri(uri)
+            if (file == null || !file.exists() || file.length() <= 0) {
+                Toast.makeText(this, "Gagal mengambil gambar dari galeri", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            val compressed = compressImage(file)
+            if (compressed != null) {
+                selectedFile = compressed
+                tampilkanPreview(compressed)
+            } else {
+                Toast.makeText(this, "Gagal kompres gambar dari galeri", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "handleGaleriResult error", e)
+            Toast.makeText(this, "Error memproses gambar galeri: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // ==================== KOMPRESI GAMBAR ====================
+    private fun compressImage(file: File): File? {
+        return try {
+            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+            if (bitmap == null) {
+                Log.e(TAG, "Bitmap null saat decode: ${file.absolutePath}")
+                return null
+            }
+
+            val fileName = "IMG_${System.currentTimeMillis()}.jpg"
+            val compressedFile = File(cacheDir, fileName)
+
+            FileOutputStream(compressedFile).use { output ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 50, output)
+            }
+            bitmap.recycle()
+
+            if (!compressedFile.exists() || compressedFile.length() <= 0) {
+                Log.e(TAG, "File hasil kompres kosong/tidak ada")
+                return null
+            }
+
+            Log.d(TAG, "Compressed size: ${compressedFile.length() / 1024} KB at ${compressedFile.absolutePath}")
+            compressedFile
+        } catch (e: Exception) {
+            Log.e(TAG, "compressImage error", e)
             null
         }
     }
 
-    private fun compressImageToCache(sourceFile: File): File? {
-        val bitmap = BitmapFactory.decodeFile(sourceFile.absolutePath)
-        if (bitmap == null) {
-            Log.e(TAG, "Gagal decode bitmap dari file: ${sourceFile.absolutePath}")
-            return null
-        }
-        return compressBitmapToCache(bitmap)
-    }
-
-    private fun compressBitmapToCache(bitmap: Bitmap): File? {
-        val fileName = "IMG_${System.currentTimeMillis()}.jpg"
-        val file = File(cacheDir, fileName)
-        try {
-            FileOutputStream(file).use { output ->
-                // Kompres dengan kualitas 30% (lebih kecil)
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 30, output)
-            }
-            Log.d(TAG, "File ukuran: ${file.length() / 1024} KB")
-            return file
-        } catch (e: Exception) {
-            Log.e(TAG, "Gagal kompres gambar", e)
-            return null
-        }
-    }
-
-    private fun copyUriToCache(uri: Uri): File? {
-        val fileName = getFileName(uri)
-        val file = File(cacheDir, fileName)
-        try {
+    private fun getFileFromUri(uri: Uri): File? {
+        return try {
+            val fileName = getFileName(uri)
+            val file = File(cacheDir, fileName)
             contentResolver.openInputStream(uri)?.use { input ->
                 FileOutputStream(file).use { output ->
                     input.copyTo(output)
                 }
+            } ?: run {
+                Log.e(TAG, "openInputStream null untuk $uri")
+                return null
             }
-            Log.d(TAG, "Video ukuran: ${file.length() / 1024} KB")
-            return file
+            if (file.exists() && file.length() > 0) file else null
         } catch (e: Exception) {
-            Log.e(TAG, "Gagal copy video", e)
-            return null
+            Log.e(TAG, "getFileFromUri error", e)
+            null
         }
     }
 
@@ -292,118 +315,164 @@ class PengaduanActivity : AppCompatActivity(), View.OnClickListener {
             }
         }
         if (name.isEmpty()) {
-            name = uri.path?.substringAfterLast("/") ?: "file_${System.currentTimeMillis()}"
+            name = "file_${System.currentTimeMillis()}.jpg"
         }
         return name
     }
 
     private fun tampilkanPreview(file: File) {
-        if (isVideo) {
-            b.ivFotoBukti.setImageResource(android.R.drawable.ic_media_play)
-            b.tvNamaFile.text = "🎬 Video: ${file.name}"
+        val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+        if (bitmap != null) {
+            b.ivFotoBukti.setImageBitmap(bitmap)
         } else {
-            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-            if (bitmap != null) {
-                b.ivFotoBukti.setImageBitmap(bitmap)
-                b.tvNamaFile.text = "📷 Gambar: ${file.name}"
-            } else {
-                // Fallback: coba load dari file
-                b.ivFotoBukti.setImageURI(Uri.fromFile(file))
-                b.tvNamaFile.text = "📷 Gambar: ${file.name}"
-            }
+            b.ivFotoBukti.setImageURI(Uri.fromFile(file))
         }
         b.ivFotoBukti.visibility = View.VISIBLE
+        b.tvNamaFile.text = "📷 Gambar: ${file.name} (${file.length() / 1024} KB)"
         b.tvNamaFile.visibility = View.VISIBLE
         b.btnHapusFoto.visibility = View.VISIBLE
     }
 
     // ==================== KIRIM PENGADUAN ====================
     private fun kirimPengaduan() {
-        val judul = b.etJudul.text.toString().trim()
-        val isi = b.etIsi.text.toString().trim()
-        val kategori = b.spKategori.selectedItem.toString()
+        try {
+            val judul = b.etJudul.text.toString().trim()
+            val isi = b.etIsi.text.toString().trim()
+            val kategori = b.spKategori.selectedItem.toString()
 
-        if (judul.isEmpty()) {
-            b.etJudul.error = "Judul wajib diisi"
-            return
-        }
-        if (isi.isEmpty()) {
-            b.etIsi.error = "Isi pengaduan wajib diisi"
-            return
-        }
-        if (kategori == "Pilih Kategori") {
-            Toast.makeText(this, "Pilih kategori", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        setLoading(true)
-
-        val client = OkHttpClient()
-        val builder = MultipartBody.Builder()
-            .setType(MultipartBody.FORM)
-            .addFormDataPart("judul_pengaduan", judul)
-            .addFormDataPart("isi_pengaduan", isi)
-            .addFormDataPart("kategori_aduan", kategori)
-
-        selectedFile?.let { file ->
-            if (file.exists()) {
-                val mediaType = if (isVideo) {
-                    "video/mp4".toMediaTypeOrNull()
-                } else {
-                    "image/jpeg".toMediaTypeOrNull()
-                }
-                builder.addFormDataPart("foto_bukti", file.name, file.asRequestBody(mediaType))
-                Log.d(TAG, "Upload file: ${file.name}, ukuran: ${file.length() / 1024} KB")
-            } else {
-                Log.e(TAG, "File tidak ditemukan: ${file.absolutePath}")
-                Toast.makeText(this, "File tidak ditemukan", Toast.LENGTH_SHORT).show()
-                setLoading(false)
+            if (judul.isEmpty()) {
+                b.etJudul.error = "Judul wajib diisi"
                 return
             }
-        }
-
-        val request = Request.Builder()
-            .url(ApiConfig.CREATE_PENGADUAN)
-            .addHeader("Authorization", "Bearer $token")
-            .addHeader("Accept", "application/json")
-            .post(builder.build())
-            .build()
-
-        client.newCall(request).enqueue(object : okhttp3.Callback {
-            override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
-                runOnUiThread {
-                    setLoading(false)
-                    Toast.makeText(
-                        this@PengaduanActivity,
-                        "Gagal: ${e.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+            if (isi.isEmpty()) {
+                b.etIsi.error = "Isi pengaduan wajib diisi"
+                return
+            }
+            if (kategori == "Pilih Kategori") {
+                Toast.makeText(this, "Pilih kategori", Toast.LENGTH_SHORT).show()
+                return
+            }
+            if (token.isEmpty()) {
+                Toast.makeText(this, "Sesi login habis, silakan login ulang", Toast.LENGTH_LONG).show()
+                return
             }
 
-            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
-                val body = response.body?.string() ?: "{}"
-                runOnUiThread {
+            setLoading(true)
+
+            val client = OkHttpClient.Builder()
+                .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+                .build()
+
+            val builder = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("judul_pengaduan", judul)
+                .addFormDataPart("isi_pengaduan", isi)
+                .addFormDataPart("kategori_aduan", kategori)
+
+            val file = selectedFile
+            if (file != null) {
+                if (!file.exists() || file.length() <= 0) {
+                    Toast.makeText(this, "File foto tidak valid, hapus dan ambil ulang", Toast.LENGTH_SHORT).show()
                     setLoading(false)
-                    if (response.isSuccessful) {
+                    return
+                }
+                Log.d(TAG, "Upload file: ${file.name}, size: ${file.length() / 1024} KB")
+                val mediaType = "image/jpeg".toMediaTypeOrNull()
+                builder.addFormDataPart("foto_bukti", file.name, file.asRequestBody(mediaType))
+            } else {
+                Log.d(TAG, "Tidak ada foto dilampirkan, mengirim tanpa foto.")
+            }
+
+            val request = Request.Builder()
+                .url(ApiConfig.CREATE_PENGADUAN)
+                .addHeader("Authorization", "Bearer $token")
+                .addHeader("Accept", "application/json")
+                .post(builder.build())
+                .build()
+
+            Log.d(TAG, "Mengirim request ke: ${request.url}")
+
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    runOnUiThread {
+                        setLoading(false)
+                        Log.e(TAG, "Upload failed (${e.javaClass.simpleName})", e)
                         Toast.makeText(
                             this@PengaduanActivity,
-                            "Pengaduan berhasil dikirim",
+                            "Gagal koneksi: ${e.javaClass.simpleName} - ${e.message}",
                             Toast.LENGTH_LONG
                         ).show()
-                        finish()
-                    } else {
-                        val msg = try {
-                            JSONObject(body).optString("message", "Gagal kirim pengaduan")
-                        } catch (e: Exception) {
-                            "Gagal kirim pengaduan"
-                        }
-                        Toast.makeText(this@PengaduanActivity, "Error ${response.code}: $msg", Toast.LENGTH_LONG).show()
-                        Log.e(TAG, "Upload gagal: code=${response.code}, body=$body")
                     }
                 }
-            }
-        })
+
+                override fun onResponse(call: Call, response: Response) {
+                    val body = try {
+                        response.body?.string() ?: "{}"
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Gagal baca response body", e)
+                        "{}"
+                    }
+                    Log.d(TAG, "Response ${response.code}: $body")
+
+                    runOnUiThread {
+                        setLoading(false)
+                        if (response.isSuccessful) {
+                            try {
+                                val json = JSONObject(body)
+                                val data = json.optJSONObject("data")
+                                val fotoPath = data?.optString("foto_bukti")
+                                if (file != null && fotoPath.isNullOrEmpty()) {
+                                    Toast.makeText(
+                                        this@PengaduanActivity,
+                                        "Pengaduan dibuat, tapi bukti foto tidak tersimpan di server!",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } else {
+                                    Toast.makeText(
+                                        this@PengaduanActivity,
+                                        "Pengaduan berhasil dikirim",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Parse response error", e)
+                                Toast.makeText(
+                                    this@PengaduanActivity,
+                                    "Pengaduan berhasil dikirim",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                            finish()
+                        } else {
+                            // Tampilkan pesan error server APA ADANYA, jangan ditelan
+                            val msg = try {
+                                JSONObject(body).optString("message", body.take(200))
+                            } catch (e: Exception) {
+                                body.take(200).ifEmpty { "Gagal (${response.code})" }
+                            }
+                            Log.e(TAG, "Error response ${response.code}: $msg")
+                            Toast.makeText(
+                                this@PengaduanActivity,
+                                "Error ${response.code}: $msg",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            })
+        } catch (e: Exception) {
+            // Tangkap SEMUA exception tak terduga sebelum request terkirim
+            // (misal: file kebaca habis dihapus sistem, builder gagal, dsb)
+            setLoading(false)
+            Log.e(TAG, "kirimPengaduan unexpected error", e)
+            Toast.makeText(
+                this,
+                "Error tak terduga: ${e.javaClass.simpleName} - ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
     }
 
     private fun setLoading(loading: Boolean) {

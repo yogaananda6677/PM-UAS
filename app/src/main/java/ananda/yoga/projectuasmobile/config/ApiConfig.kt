@@ -6,6 +6,7 @@ object ApiConfig {
 
     const val TIMEOUT = 15000
     val BASE_URL: String = BuildConfig.BASE_URL
+    val STORAGE_URL = BASE_URL + "storage"
 
     // AUTH
     val LOGIN = BASE_URL + "login"

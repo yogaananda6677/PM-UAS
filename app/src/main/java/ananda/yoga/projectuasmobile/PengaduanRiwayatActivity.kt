@@ -16,6 +16,7 @@ import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
 import org.json.JSONArray
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -134,28 +135,35 @@ class PengaduanRiwayatActivity : AppCompatActivity() {
 
         setStatusColor(dialogBinding.tvDetailStatus, item.status_pengaduan)
 
+        // ==== PERBAIKAN: TAMPILKAN GAMBAR ====
         val buktiUrl = item.foto_bukti
         if (buktiUrl.isNullOrEmpty()) {
             dialogBinding.ivDetailBukti.visibility = View.GONE
             dialogBinding.tvDetailVideoIndicator.visibility = View.GONE
         } else {
             dialogBinding.ivDetailBukti.visibility = View.VISIBLE
-            val fullUrl = "http://192.168.20.226:8000/storage/$buktiUrl"
-            val isVideo = buktiUrl.endsWith(".mp4") || buktiUrl.endsWith(".mov") || buktiUrl.endsWith(".3gp")
+            // Gunakan base URL dari ApiConfig
+            val fullUrl = ApiConfig.BASE_URL + "storage/" + buktiUrl
+
+            val isVideo = buktiUrl.endsWith(".mp4") ||
+                    buktiUrl.endsWith(".mov") ||
+                    buktiUrl.endsWith(".3gp")
 
             if (isVideo) {
                 dialogBinding.tvDetailVideoIndicator.visibility = View.VISIBLE
                 Glide.with(this)
                     .load(fullUrl)
-                    .placeholder(android.R.drawable.ic_media_play)
-                    .error(android.R.drawable.ic_media_play)
+                    .apply(RequestOptions()
+                        .placeholder(android.R.drawable.ic_media_play)
+                        .error(android.R.drawable.ic_media_play))
                     .into(dialogBinding.ivDetailBukti)
             } else {
                 dialogBinding.tvDetailVideoIndicator.visibility = View.GONE
                 Glide.with(this)
                     .load(fullUrl)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .error(android.R.drawable.ic_menu_gallery)
+                    .apply(RequestOptions()
+                        .placeholder(android.R.drawable.ic_menu_gallery)
+                        .error(android.R.drawable.ic_menu_gallery))
                     .into(dialogBinding.ivDetailBukti)
             }
         }
