@@ -33,7 +33,6 @@ class MonitoringAdapter(
         val tvJam = view.findViewById<TextView>(R.id.tvJam)
         val tvBayar = view.findViewById<TextView>(R.id.tvBayar)
 
-        // Selalu tampilkan nomor, tipe, jam
         tvNomor.text = "PS ${item.nomorPs}"
         tvTipe.text = "Tipe : ${item.tipePs}"
         val jam = if (item.jamMulai.isBlank() || item.jamSelesai.isBlank())
@@ -42,7 +41,6 @@ class MonitoringAdapter(
             "${item.jamMulai} - ${item.jamSelesai}"
         tvJam.text = "Jam : $jam"
 
-        // Status
         tvStatus.text = item.statusPs.uppercase()
         when (item.statusPs.lowercase()) {
             "tersedia" -> {
@@ -67,11 +65,9 @@ class MonitoringAdapter(
             }
         }
 
-        // ========== LOGIKA TAMPILAN ==========
         val isMilikSaya = idUserLogin.isNotEmpty() && item.idUserTransaksi == idUserLogin
 
         when {
-            // 1. Status "Tersedia" -> tidak tampilkan pelanggan/bayar
             item.statusPs.lowercase() in listOf("tersedia", "available") -> {
                 tvPelanggan.visibility = View.GONE
                 tvBayar.visibility = View.GONE
