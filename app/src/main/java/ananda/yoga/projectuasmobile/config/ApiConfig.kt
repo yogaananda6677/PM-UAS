@@ -36,4 +36,9 @@ object ApiConfig {
 
     // USER
     val UPDATE_PASSWORD = BASE_URL + "user/password"
+
+    // ==================== TRANSAKSI ====================
+    fun DETAIL_TRANSAKSI(id: String): String {
+        return BASE_URL + "transaksi/" + id
+    }
 }
